@@ -12,11 +12,12 @@ from lib.auth import require_exec
 from lib.budget import current_monthly, top_users
 from lib.index import DB_PATH as INDEX_DB, list_docs
 from lib.search import clear_cache as clear_search_cache
-from lib.ui import brand_footer, inject_global_css, page_header, tag
+from lib.ui import brand_footer, inject_global_css, page_header, tag, top_nav
 
-st.set_page_config(page_title="Director · QMUN Hub", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="Director · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
 user = require_exec()
+top_nav(user)
 
 page_header("Director", "Run the team", "Weekly topics, conferences, assignments, archive curation, costs.")
 

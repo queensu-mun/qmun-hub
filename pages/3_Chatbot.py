@@ -11,11 +11,12 @@ from lib.chat import (
     FEATURE_KEYS,
     stream_respond,
 )
-from lib.ui import brand_footer, inject_global_css, page_header
+from lib.ui import brand_footer, inject_global_css, page_header, top_nav
 
-st.set_page_config(page_title="Chatbot · QMUN Hub", page_icon="💬", layout="wide")
+st.set_page_config(page_title="Chatbot · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
 user = require_login()
+top_nav(user)
 
 mode_label = {
     ChatMode.MENTOR: "Mentor",

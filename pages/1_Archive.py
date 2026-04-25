@@ -5,11 +5,12 @@ import streamlit as st
 from lib.auth import require_login
 from lib.index import doc_text, index_stats, list_docs
 from lib.search import hybrid_search
-from lib.ui import brand_footer, inject_global_css, page_header, tag
+from lib.ui import brand_footer, inject_global_css, page_header, tag, top_nav
 
-st.set_page_config(page_title="Archive · QMUN Hub", page_icon="📚", layout="wide")
+st.set_page_config(page_title="Archive · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
 user = require_login()
+top_nav(user)
 
 DOC_TYPE_LABELS = {
     "All": None,

@@ -6,11 +6,12 @@ from lib.auth import require_login
 from lib.brief import BriefRequest, generate_streaming
 from lib.budget import current_monthly
 from lib.cache import recent
-from lib.ui import brand_footer, inject_global_css, page_header, tag
+from lib.ui import brand_footer, inject_global_css, page_header, tag, top_nav
 
-st.set_page_config(page_title="Brief · QMUN Hub", page_icon="🌍", layout="wide")
+st.set_page_config(page_title="Brief · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
 user = require_login()
+top_nav(user)
 
 page_header("Brief", "A starting point on any country", "Built around the team's three-question framework. Mock or full conference depth.")
 

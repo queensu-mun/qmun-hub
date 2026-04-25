@@ -10,10 +10,14 @@ import streamlit as st
 from lib.index import Doc, upsert_doc
 from lib.interview import INTERVIEW_SECTIONS
 from lib.search import clear_cache as clear_search_cache
-from lib.ui import brand_footer, inject_global_css, page_header
+from lib.auth import current_user
+from lib.ui import brand_footer, inject_global_css, page_header, top_nav
 
-st.set_page_config(page_title="Alumni Interview · QMUN Hub", page_icon="🎙️", layout="wide")
+st.set_page_config(page_title="Contribute · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
+_u = current_user()
+if _u:
+    top_nav(_u)
 
 page_header(
     "Contribute",

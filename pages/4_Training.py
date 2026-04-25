@@ -6,11 +6,12 @@ import streamlit as st
 
 from lib.auth import require_login
 from lib.index import doc_text, list_docs
-from lib.ui import brand_footer, inject_global_css, page_header
+from lib.ui import brand_footer, inject_global_css, page_header, top_nav
 
-st.set_page_config(page_title="Training · QMUN Hub", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Training · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
 user = require_login()
+top_nav(user)
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED = ROOT / "data" / "seed"
