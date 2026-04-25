@@ -1,0 +1,16 @@
+.streamlit/secrets.toml
+.env
+.env.local
+data/archive.db
+data/usage.db
+data/*.db-journal
+data/cache/
+service_account.json
+*.pyc
+__pycache__/
+.venv/
+venv/
+.DS_Store
+.idea/
+.vscode/
+*.log
