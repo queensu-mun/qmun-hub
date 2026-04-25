@@ -96,6 +96,26 @@ SOURCES = [
         "kind": "pdf",
         "metadata": {"committee": "SOCHUM", "topic": "SDG 4 - Quality Education"},
     },
+    {
+        "doc_id": "seed_parli_pro_cheatsheet",
+        "title": "Parliamentary Procedure Cheat Sheet",
+        "doc_type": "training",
+        "year": 2026,
+        "path": SEED / "parli_pro_cheatsheet.md",
+        "kind": "markdown",
+        "metadata": {"scope": "Quick reference: points, motions, yields, voting thresholds"},
+        "quality_flag": "exemplary",
+    },
+    {
+        "doc_id": "seed_awards_rubric",
+        "title": "Awards Rubric (North American Collegiate Circuit)",
+        "doc_type": "training",
+        "year": 2026,
+        "path": SEED / "awards_rubric.md",
+        "kind": "markdown",
+        "metadata": {"scope": "What chairs evaluate; conference-specific weighting; what wins and loses awards"},
+        "quality_flag": "exemplary",
+    },
 ]
 
 
