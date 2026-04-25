@@ -12,13 +12,13 @@ from lib.auth import require_exec
 from lib.budget import current_monthly, top_users
 from lib.index import DB_PATH as INDEX_DB, list_docs
 from lib.search import clear_cache as clear_search_cache
-from lib.ui import brand_footer, inject_global_css, page_header, pill
+from lib.ui import brand_footer, inject_global_css, page_header, tag
 
 st.set_page_config(page_title="Director · QMUN Hub", page_icon="🎯", layout="wide")
 inject_global_css()
 user = require_exec()
 
-page_header("🎯 Director", "Run the team.")
+page_header("Director", "Run the team", "Weekly topics, conferences, assignments, archive curation, costs.")
 
 tabs = st.tabs([
     "Weekly Topics",
@@ -41,7 +41,7 @@ with tabs[0]:
             with st.container(border=True):
                 existing = state["weekly_topics"].get(day) or {}
                 title = "Monday, light mock" if day == "monday" else "Thursday, competitive"
-                badge = pill("set" if existing else "not set")
+                badge = tag("set" if existing else "not set")
                 st.markdown(f"**{title}** &nbsp;{badge}", unsafe_allow_html=True)
                 topic = st.text_input("Topic", value=existing.get("topic", ""), key=f"{day}_topic")
                 committee = st.text_input("Committee", value=existing.get("committee", ""), key=f"{day}_committee")
@@ -149,9 +149,9 @@ with tabs[3]:
         for d in docs:
             with st.container(border=True):
                 cols = st.columns([4, 2, 2, 2, 1])
-                badges = pill(d["doc_type"])
+                badges = tag(d["doc_type"])
                 if d["year"]:
-                    badges += " " + pill(str(d["year"]))
+                    badges += " " + tag(str(d["year"]))
                 cols[0].markdown(f"**{d['title']}**", unsafe_allow_html=True)
                 cols[0].markdown(badges, unsafe_allow_html=True)
                 cols[0].caption(f"{d['chunk_count']} chunks · indexed {d['indexed_at'][:10]}")

@@ -5,7 +5,7 @@ import streamlit as st
 from lib.auth import require_login
 from lib.index import doc_text, index_stats, list_docs
 from lib.search import hybrid_search
-from lib.ui import brand_footer, inject_global_css, page_header, pill
+from lib.ui import brand_footer, inject_global_css, page_header, tag
 
 st.set_page_config(page_title="Archive · QMUN Hub", page_icon="📚", layout="wide")
 inject_global_css()
@@ -24,7 +24,7 @@ DOC_TYPE_LABELS = {
 
 DOC_TYPE_DISPLAY = {v: k for k, v in DOC_TYPE_LABELS.items() if v}
 
-page_header("📚 Archive", "Everything the team has ever written, searchable.")
+page_header("Archive", "What the team knows", "Past papers, study guides, alumni interviews. Vector + keyword search.")
 
 stats = index_stats()
 if stats["n_docs"] == 0:
@@ -68,22 +68,22 @@ if submitted and query:
     if not hits:
         st.info("No results. Try a different query or remove filters.")
     else:
-        st.markdown(f"<div class='qmun-muted'>{len(hits)} result(s)</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='subtle'>{len(hits)} result(s)</div>", unsafe_allow_html=True)
         for h in hits:
             with st.container(border=True):
                 title_cols = st.columns([5, 1])
                 with title_cols[0]:
-                    badges = pill(DOC_TYPE_DISPLAY.get(h.doc_type, h.doc_type))
+                    badges = tag(DOC_TYPE_DISPLAY.get(h.doc_type, h.doc_type))
                     if h.year:
-                        badges += " " + pill(str(h.year))
+                        badges += " " + tag(str(h.year))
                     if h.quality_flag == "exemplary":
-                        badges += " " + pill("⭐ exemplary")
+                        badges += " " + tag("Exemplary", accent=True)
                     elif h.quality_flag == "outdated":
-                        badges += " " + pill("outdated")
+                        badges += " " + tag("outdated")
                     st.markdown(f"**{h.doc_title}** &nbsp;{badges}", unsafe_allow_html=True)
                 with title_cols[1]:
                     st.markdown(
-                        f"<div style='text-align:right' class='qmun-muted'>"
+                        f"<div style='text-align:right' class='subtle'>"
                         f"score {h.score:.2f}<br/>"
                         f"<span style='font-size:0.7rem;'>vec {h.vector_score:.2f} | bm25 {h.bm25_score:.2f}</span>"
                         f"</div>",
@@ -115,11 +115,11 @@ else:
         for col, d in zip(cols, row):
             with col:
                 with st.container(border=True):
-                    badges = pill(DOC_TYPE_DISPLAY.get(d["doc_type"], d["doc_type"]))
+                    badges = tag(DOC_TYPE_DISPLAY.get(d["doc_type"], d["doc_type"]))
                     if d["year"]:
-                        badges += " " + pill(str(d["year"]))
+                        badges += " " + tag(str(d["year"]))
                     if d["quality_flag"] == "exemplary":
-                        badges += " " + pill("⭐ exemplary")
+                        badges += " " + tag("Exemplary", accent=True)
                     st.markdown(f"**{d['title']}**", unsafe_allow_html=True)
                     st.markdown(badges, unsafe_allow_html=True)
                     st.caption(f"{d['chunk_count']} chunks · indexed {d['indexed_at'][:10]}")

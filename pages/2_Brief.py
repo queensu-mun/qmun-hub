@@ -6,13 +6,13 @@ from lib.auth import require_login
 from lib.brief import BriefRequest, generate_streaming
 from lib.budget import current_monthly
 from lib.cache import recent
-from lib.ui import brand_footer, inject_global_css, page_header, pill
+from lib.ui import brand_footer, inject_global_css, page_header, tag
 
 st.set_page_config(page_title="Brief · QMUN Hub", page_icon="🌍", layout="wide")
 inject_global_css()
 user = require_login()
 
-page_header("🌍 Brief", "A starting point on any country, any topic.")
+page_header("Brief", "A starting point on any country", "Built around the team's three-question framework. Mock or full conference depth.")
 
 with st.container(border=True):
     cols = st.columns([1, 1, 1])
@@ -88,14 +88,14 @@ if generate_btn:
                 "depth": req.depth,
             }
             badge = "Cache hit · $0.00" if final_brief.cache_hit else f"Generated · ${final_brief.cost_usd:.4f}"
-            st.markdown(f"<div class='qmun-muted'>{badge}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='subtle'>{badge}</div>", unsafe_allow_html=True)
 
 elif "last_brief" in st.session_state:
     b = st.session_state["last_brief"]
     st.markdown("### Brief")
     st.markdown(b["markdown"])
     badge = "Cache hit · $0.00" if b["cache_hit"] else f"Generated · ${b['cost']:.4f}"
-    st.markdown(f"<div class='qmun-muted'>{badge}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='subtle'>{badge}</div>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -112,7 +112,7 @@ with left:
                 cols = st.columns([3, 1])
                 cols[0].markdown(f"**{it['country']}** · {it['committee']}")
                 cols[0].caption(it["topic"])
-                cols[1].markdown(pill(it["depth"]) + f" <span class='qmun-muted'>${it['cost_usd']:.3f}</span>", unsafe_allow_html=True)
+                cols[1].markdown(tag(it["depth"]) + f" <span class='subtle'>${it['cost_usd']:.3f}</span>", unsafe_allow_html=True)
 
 with right:
     st.markdown("### This month")

@@ -18,9 +18,9 @@ inject_global_css()
 user = require_login()
 
 mode_label = {
-    ChatMode.MENTOR: "🎓 Mentor",
-    ChatMode.CRISIS_BACKROOM: "🌀 Crisis Backroom",
-    ChatMode.CHAIR_ASSISTANT: "🧑‍⚖️ Chair Assistant",
+    ChatMode.MENTOR: "Mentor",
+    ChatMode.CRISIS_BACKROOM: "Crisis Backroom",
+    ChatMode.CHAIR_ASSISTANT: "Chair Assistant",
 }
 
 mode_options = [ChatMode.MENTOR]
@@ -66,7 +66,7 @@ with st.sidebar:
         st.session_state.pop("chat_history_by_mode", None)
         st.rerun()
 
-page_header(mode_label[selected], MODE_DESCRIPTIONS[selected])
+page_header("Chatbot", mode_label[selected], MODE_DESCRIPTIONS[selected])
 
 # Per-mode history (keep separate so switching modes doesn't pollute context)
 if "chat_history_by_mode" not in st.session_state:

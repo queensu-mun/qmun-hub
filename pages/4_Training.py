@@ -15,7 +15,7 @@ user = require_login()
 ROOT = Path(__file__).resolve().parent.parent
 SEED = ROOT / "data" / "seed"
 
-page_header("🎓 Training", "The handbook, the rules, what wins and loses awards.")
+page_header("Training", "The handbook", "Art of MUN, parli pro, awards rubric, common mistakes, the social side.")
 
 tabs = st.tabs([
     "Art of MUN",

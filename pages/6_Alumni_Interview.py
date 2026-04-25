@@ -16,7 +16,8 @@ st.set_page_config(page_title="Alumni Interview · QMUN Hub", page_icon="🎙️
 inject_global_css()
 
 page_header(
-    "🎙️ Tell us what you know",
+    "Contribute",
+    "Tell us what you know",
     "What you learned at Queen's MUN walks out the door when you graduate. This is how it stays.",
 )
 
