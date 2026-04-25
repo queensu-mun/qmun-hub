@@ -9,16 +9,16 @@ GLOBAL_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,500&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg: #0A1525;
-    --bg-deep: #07101D;
-    --surface: #122035;
-    --surface-2: #182942;
-    --surface-3: #1F3553;
-    --border: #1B2C44;
-    --border-strong: #25395A;
+    --bg: #060E1A;
+    --bg-deep: #03080F;
+    --surface: #0E1A2C;
+    --surface-2: #142337;
+    --surface-3: #1B2F47;
+    --border: #182942;
+    --border-strong: #233754;
     --text: #F2F2F0;
     --text-muted: #8B9AAD;
-    --text-faint: #5A6A7E;
+    --text-faint: #56697F;
     --accent: #9D1939;
     --accent-hover: #BB1E45;
     --accent-soft: rgba(157, 25, 57, 0.14);
@@ -36,9 +36,8 @@ html, body, [class*="css"], .stMarkdown, .stTextInput, .stSelectbox {
 
 body {
     background:
-        radial-gradient(ellipse 75% 45% at 30% 0%, rgba(157, 25, 57, 0.08), transparent 60%),
-        radial-gradient(ellipse 65% 50% at 100% 30%, rgba(75, 123, 191, 0.06), transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(184, 157, 94, 0.04), transparent 60%),
+        radial-gradient(ellipse 70% 40% at 25% 0%, rgba(157, 25, 57, 0.07), transparent 60%),
+        radial-gradient(ellipse 60% 45% at 100% 30%, rgba(75, 123, 191, 0.05), transparent 60%),
         var(--bg) !important;
 }
 
@@ -91,22 +90,14 @@ blockquote {
 }
 
 /* ---------------- TOP NAV ---------------- */
-.qmun-topnav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.9rem 0;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    gap: 1rem;
-}
-.qmun-topnav-brand {
+.qmun-brand-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-shrink: 0;
+    padding: 0.5rem 0;
 }
-.qmun-topnav-brand-text {
+.qmun-brand-text-block { line-height: 1.1; }
+.qmun-brand-text {
     font-family: 'Inter Tight', sans-serif;
     font-weight: 700;
     letter-spacing: -0.015em;
@@ -114,52 +105,53 @@ blockquote {
     color: var(--text);
     line-height: 1;
 }
-.qmun-topnav-brand-sub {
-    font-size: 0.65rem;
+.qmun-brand-sub {
+    font-size: 0.66rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-top: 4px;
+    font-weight: 500;
+}
+.qmun-user-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.5rem 0;
+    justify-content: flex-end;
+}
+.qmun-user-info { text-align: right; line-height: 1.1; }
+.qmun-user-name { font-weight: 500; font-size: 0.88rem; color: var(--text); }
+.qmun-user-role {
+    font-size: 0.66rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.14em;
     margin-top: 3px;
+    font-weight: 500;
 }
-.qmun-topnav-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-}
-.qmun-topnav-user-info {
-    text-align: right;
-    line-height: 1.1;
-}
-.qmun-topnav-user-name { font-weight: 500; font-size: 0.85rem; color: var(--text); }
-.qmun-topnav-user-role {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-top: 2px;
-}
-.qmun-topnav-avatar {
-    width: 32px; height: 32px;
+.qmun-user-avatar {
+    width: 34px; height: 34px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), #4B7BBF);
-    display: flex; align-items: center; justify-content: center;
+    display: inline-flex; align-items: center; justify-content: center;
     color: white; font-weight: 600; font-size: 0.78rem;
+    flex-shrink: 0;
 }
 
-/* Nav links via st.page_link (target the nav-links container) */
-.qmun-nav-links { display: flex; gap: 0.25rem; flex: 1; justify-content: center; }
-.qmun-nav-links [data-testid="stPageLink-NavLink"] {
+/* Streamlit page links: clean text-style nav items */
+[data-testid="stPageLink-NavLink"] {
     background: transparent !important;
     border: none !important;
     border-radius: 6px !important;
-    padding: 0.4rem 0.85rem !important;
+    padding: 0.45rem 0.85rem !important;
     color: var(--text-muted) !important;
     font-weight: 500 !important;
     font-size: 0.88rem !important;
+    text-decoration: none !important;
     transition: color 140ms ease, background 140ms ease;
 }
-.qmun-nav-links [data-testid="stPageLink-NavLink"]:hover {
+[data-testid="stPageLink-NavLink"]:hover {
     color: var(--text) !important;
     background: var(--surface) !important;
 }
@@ -500,36 +492,40 @@ def tag(text: str, *, accent: bool = False) -> str:
 
 
 def top_nav(user) -> None:
-    """Render the top brand bar + horizontal page links + user chip.
+    """Render the top nav: brand on left, page links centered, user chip on right.
 
-    Caller must invoke right after inject_global_css().
+    Built with st.columns + small markdown chunks (no big nested HTML blocks)
+    so Streamlit's sanitizer doesn't break the structure.
     """
     initials = "".join(w[0].upper() for w in user.name.split()[:2]) if user.name else "?"
-    # Brand row + user chip row
-    st.markdown(
-        f"""
-<div class='qmun-topnav'>
-  <div class='qmun-topnav-brand'>
-    {qmun_logo(size=34)}
-    <div>
-      <div class='qmun-topnav-brand-text'>Queen's MUN</div>
-      <div class='qmun-topnav-brand-sub'>Team workspace</div>
-    </div>
-  </div>
-  <div class='qmun-topnav-user'>
-    <div class='qmun-topnav-user-info'>
-      <div class='qmun-topnav-user-name'>{user.name}</div>
-      <div class='qmun-topnav-user-role'>{user.role.title()}</div>
-    </div>
-    <div class='qmun-topnav-avatar'>{initials}</div>
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
 
-    # Nav links row (rendered as columns of st.page_link, styled by .qmun-nav-links wrapper)
-    st.markdown("<div class='qmun-nav-links-wrapper' style='margin-bottom:2rem;'>", unsafe_allow_html=True)
+    # Top brand row
+    brand_col, _spacer, user_col = st.columns([3, 6, 3])
+    with brand_col:
+        st.markdown(
+            f"<div class='qmun-brand-row'>{qmun_logo(size=36)}"
+            f"<div class='qmun-brand-text-block'>"
+            f"<div class='qmun-brand-text'>Queen's MUN</div>"
+            f"<div class='qmun-brand-sub'>Team workspace</div>"
+            f"</div></div>",
+            unsafe_allow_html=True,
+        )
+    with user_col:
+        st.markdown(
+            f"<div class='qmun-user-row'>"
+            f"<div class='qmun-user-info'>"
+            f"<div class='qmun-user-name'>{user.name}</div>"
+            f"<div class='qmun-user-role'>{user.role.title()}</div>"
+            f"</div>"
+            f"<div class='qmun-user-avatar'>{initials}</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Thin tricolor accent rule under brand row
+    st.markdown(tricolor_bar(height=2), unsafe_allow_html=True)
+
+    # Nav links row
     pages = [
         ("Home", "app.py"),
         ("Brief", "pages/2_Brief.py"),
@@ -541,11 +537,12 @@ def top_nav(user) -> None:
     if user.is_exec:
         pages.append(("Director", "pages/5_Director.py"))
 
-    cols = st.columns([1] * len(pages) + [3])  # last column eats space so links left-justify
-    for col, (label, path) in zip(cols, pages):
+    nav_cols = st.columns([1] * len(pages) + [4])  # spacer column eats remaining width
+    for col, (label, path) in zip(nav_cols, pages):
         with col:
             st.page_link(path, label=label)
-    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:1.5rem;'></div>", unsafe_allow_html=True)
 
 
 def feature_tile(*, icon_svg: str, title: str, blurb: str, page_path: str, link_label: str = "Open") -> None:

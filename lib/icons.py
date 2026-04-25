@@ -1,6 +1,8 @@
 """Inline SVG icons (Lucide-style, single-stroke). Returns HTML strings."""
 from __future__ import annotations
 
+import base64
+
 
 def _svg(path: str, *, size: int = 20, stroke_width: float = 1.5, color: str = "currentColor") -> str:
     return (
@@ -99,21 +101,21 @@ def users(size: int = 20) -> str:
     )
 
 
-# QMUN logo: tricolor monogram
+# Refined wordmark logo: bold monogram "Q·M" with red dot and stacked tricolor underline
+_QMUN_LOGO_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="3" y="3" width="34" height="34" rx="7" fill="#0F1B2E" stroke="#243854" stroke-width="1"/><text x="20" y="23" font-family="Inter Tight, sans-serif" font-weight="800" font-size="14" fill="#F2F2F0" text-anchor="middle" letter-spacing="-0.5">QM</text><rect x="9" y="29" width="7" height="2" fill="#9D1939"/><rect x="16.5" y="29" width="7" height="2" fill="#B89D5E"/><rect x="24" y="29" width="7" height="2" fill="#4B7BBF"/></svg>'''
+
+
 def qmun_logo(*, size: int = 32) -> str:
-    """Custom Queen's MUN monogram. A 'Q' with tricolor inset bars."""
-    return f'''
-<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 40 40" fill="none">
-  <circle cx="20" cy="20" r="17" stroke="#F2F2F0" stroke-width="2.5"/>
-  <line x1="27" y1="27" x2="34" y2="34" stroke="#F2F2F0" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="13" y="13" width="14" height="2.2" fill="#9D1939"/>
-  <rect x="13" y="18.4" width="14" height="2.2" fill="#B89D5E"/>
-  <rect x="13" y="23.8" width="14" height="2.2" fill="#1B3A6B"/>
-</svg>
-'''
+    """Returns the QM logo as a base64 data-uri <img> tag (safe in any markdown context)."""
+    b64 = base64.b64encode(_QMUN_LOGO_SVG.encode()).decode()
+    return (
+        f'<img src="data:image/svg+xml;base64,{b64}" width="{size}" height="{size}" '
+        f'style="display:inline-block;vertical-align:middle;border:none;" alt="Queen\'s MUN"/>'
+    )
 
 
-HERO_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;"><defs><radialGradient id="bgGlow" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#9D1939" stop-opacity="0.15"/><stop offset="100%" stop-color="#0A0A0B" stop-opacity="0"/></radialGradient><linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1F2028"/><stop offset="100%" stop-color="#13131A"/></linearGradient></defs><rect width="600" height="360" fill="url(#bgGlow)"/><g transform="translate(300 180)"><circle r="115" fill="url(#globeGrad)" stroke="#2A2B35" stroke-width="1.5"/><ellipse rx="115" ry="38" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="115" ry="76" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="115" ry="100" fill="none" stroke="#2A2B35" stroke-width="0.6" opacity="0.6"/><ellipse rx="38" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="76" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="100" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.6" opacity="0.6"/><path d="M -90 -40 Q 0 -130 90 -40" fill="none" stroke="#9D1939" stroke-width="1.4" opacity="0.9"/><path d="M -100 30 Q 20 -90 100 -10" fill="none" stroke="#B89D5E" stroke-width="1.2" opacity="0.75"/><path d="M -70 60 Q 30 130 95 30" fill="none" stroke="#1B3A6B" stroke-width="1.4" opacity="0.9"/><circle cx="-90" cy="-40" r="4" fill="#9D1939"/><circle cx="90" cy="-40" r="4" fill="#9D1939"/><circle cx="-100" cy="30" r="3" fill="#B89D5E"/><circle cx="100" cy="-10" r="3" fill="#B89D5E"/><circle cx="-70" cy="60" r="4" fill="#1B3A6B"/><circle cx="95" cy="30" r="4" fill="#1B3A6B"/><circle r="2" fill="#F2F2F0" opacity="0.3"/></g><g opacity="0.55"><line x1="50" y1="80" x2="50" y2="50" stroke="#7C7C85" stroke-width="0.8"/><rect x="50" y="50" width="14" height="9" fill="#9D1939"/><line x1="540" y1="100" x2="540" y2="70" stroke="#7C7C85" stroke-width="0.8"/><rect x="540" y="70" width="14" height="9" fill="#1B3A6B"/><line x1="80" y1="290" x2="80" y2="260" stroke="#7C7C85" stroke-width="0.8"/><rect x="80" y="260" width="14" height="9" fill="#B89D5E"/></g></svg>'''
+# Editorial hero: stylized assembly seating arc with chamber backdrop. Diplomatic, not scientific.
+HERO_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;"><defs><linearGradient id="bgFade" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0F1C32" stop-opacity="0.6"/><stop offset="100%" stop-color="#060E1A" stop-opacity="0"/></linearGradient><linearGradient id="podiumGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#243854"/><stop offset="100%" stop-color="#15243B"/></linearGradient></defs><rect width="600" height="380" fill="url(#bgFade)"/><g transform="translate(300 230)"><path d="M -240 0 A 240 240 0 0 1 240 0" fill="none" stroke="#243854" stroke-width="1.2"/><path d="M -195 0 A 195 195 0 0 1 195 0" fill="none" stroke="#1F314B" stroke-width="1"/><path d="M -150 0 A 150 150 0 0 1 150 0" fill="none" stroke="#1A2A40" stroke-width="0.9"/><path d="M -105 0 A 105 105 0 0 1 105 0" fill="none" stroke="#162335" stroke-width="0.8"/><g fill="#3A5377"><circle cx="-220" cy="-22" r="3.5"/><circle cx="-180" cy="-50" r="3.5"/><circle cx="-130" cy="-72" r="3.5"/><circle cx="-75" cy="-86" r="3.5"/><circle cx="-15" cy="-92" r="3.5"/><circle cx="45" cy="-89" r="3.5"/><circle cx="105" cy="-78" r="3.5"/><circle cx="155" cy="-58" r="3.5"/><circle cx="200" cy="-30" r="3.5"/></g><g fill="#3A5377"><circle cx="-180" cy="-12" r="3"/><circle cx="-145" cy="-38" r="3"/><circle cx="-100" cy="-58" r="3"/><circle cx="-50" cy="-70" r="3"/><circle cx="0" cy="-74" r="3"/><circle cx="50" cy="-72" r="3"/><circle cx="100" cy="-62" r="3"/><circle cx="145" cy="-44" r="3"/><circle cx="180" cy="-18" r="3"/></g><g><circle cx="-95" cy="-20" r="4" fill="#9D1939"/><circle cx="-30" cy="-30" r="4" fill="#B89D5E"/><circle cx="40" cy="-28" r="4" fill="#4B7BBF"/></g><rect x="-50" y="0" width="100" height="22" rx="3" fill="url(#podiumGrad)" stroke="#2D4467" stroke-width="0.8"/><rect x="-3" y="-16" width="6" height="16" fill="#7C8FA8"/><rect x="-7" y="-22" width="14" height="8" fill="#9D1939"/></g><g opacity="0.4"><line x1="80" y1="80" x2="80" y2="40" stroke="#5A6A7E" stroke-width="0.7"/><rect x="80" y="40" width="16" height="11" fill="#9D1939"/><line x1="520" y1="100" x2="520" y2="60" stroke="#5A6A7E" stroke-width="0.7"/><rect x="520" y="60" width="16" height="11" fill="#4B7BBF"/><line x1="40" y1="200" x2="40" y2="160" stroke="#5A6A7E" stroke-width="0.7"/><rect x="40" y="160" width="16" height="11" fill="#B89D5E"/></g></svg>'''
 
 
 def hero_illustration() -> str:
