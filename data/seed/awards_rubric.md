@@ -47,7 +47,7 @@ Most conferences award per committee:
 1. **Best Delegate** (1 per committee) — peak across all four axes
 2. **Outstanding Delegate** (1-2 per committee) — strong across most axes
 3. **Honorable Mention** (1-2 per committee) — clear contributors who didn't win the room
-4. **Verbal Commendation** (varies) — chair recognition for specific moments (Jack has these from NCSC UNSC fall 2025 + ILMUNC DISEC fall 2024)
+4. **Verbal Commendation** (varies) — chair recognition for specific moments in committee, sometimes given out separate from the main awards.
 5. **Best Position Paper** (sometimes separate) — purely on the written submission
 
 ## What loses awards

@@ -45,8 +45,8 @@ def _dev_login_form() -> User | None:
     st.markdown("# 🌐 QMUN Hub")
     st.caption("Dev sign-in (Slack OAuth wired up in Phase 1.4)")
     with st.form("dev_login"):
-        name = st.text_input("Display name", value="Jack Guillemette")
-        slack_id = st.text_input("Slack user ID", value="U_JACK_ID")
+        name = st.text_input("Display name", placeholder="First Last")
+        slack_id = st.text_input("Slack user ID", placeholder="U_XXXXX (use U_JACK_DEV for exec access)")
         submitted = st.form_submit_button("Sign in", type="primary")
     if submitted and name and slack_id:
         user = User(slack_id=slack_id, name=name, role=_resolve_role(slack_id))

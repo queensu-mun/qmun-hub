@@ -18,7 +18,7 @@ st.set_page_config(page_title="Director · QMUN Hub", page_icon="🎯", layout="
 inject_global_css()
 user = require_exec()
 
-page_header("🎯 Director", "Assignments, weekly topics, archive curation, cost dashboard.")
+page_header("🎯 Director", "Run the team.")
 
 tabs = st.tabs([
     "Weekly Topics",
@@ -216,8 +216,7 @@ with tabs[5]:
     st.markdown("### Alumni interview campaign")
     st.markdown(
         "Send the structured interview to graduating seniors and alumni. "
-        "Responses get auto-indexed into the Archive. Template is identical to "
-        "Jack's MUN Claude self-interview doc."
+        "Responses get auto-indexed into the Archive so future delegates can search them."
     )
     st.info("Standalone interview submission page lives at /Alumni_Interview (publicly accessible). "
             "Director-side response viewer + 'mark as indexed' workflow lands next.", icon="🚧")

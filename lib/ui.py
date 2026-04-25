@@ -82,7 +82,6 @@ def pill(text: str) -> str:
 
 def brand_footer() -> None:
     st.markdown(
-        "<div class='qmun-footer'>QMUN Hub · Queen's Model UN · "
-        "Built for the team, by the team.</div>",
+        "<div class='qmun-footer'>Queen's Model UN</div>",
         unsafe_allow_html=True,
     )

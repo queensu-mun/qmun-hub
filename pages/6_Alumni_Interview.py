@@ -16,9 +16,8 @@ st.set_page_config(page_title="Alumni Interview · QMUN Hub", page_icon="🎙️
 inject_global_css()
 
 page_header(
-    "🎙️ Alumni Interview",
-    "Help future Queen's MUN delegates by sharing what you learned. "
-    "Stream-of-consciousness is fine; bullet points are great. We'll structure it.",
+    "🎙️ Tell us what you know",
+    "What you learned at Queen's MUN walks out the door when you graduate. This is how it stays.",
 )
 
 with st.container(border=True):
@@ -29,8 +28,8 @@ with st.container(border=True):
         grad_year = st.number_input("Graduation year", min_value=2010, max_value=2035, value=2026, step=1)
 
 st.caption(
-    "You don't have to answer everything. Skip what doesn't apply. "
-    "Your answers will be indexed into the team's archive so future delegates can search them."
+    "Skip whatever doesn't apply. Bullet points are fine. War stories are better. "
+    "Whatever you write goes into the team's searchable archive."
 )
 
 # Initialize response state

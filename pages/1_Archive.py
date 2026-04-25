@@ -24,7 +24,7 @@ DOC_TYPE_LABELS = {
 
 DOC_TYPE_DISPLAY = {v: k for k, v in DOC_TYPE_LABELS.items() if v}
 
-page_header("📚 Archive", "Search past papers, study guides, alumni interviews, and director notes.")
+page_header("📚 Archive", "Everything the team has ever written, searchable.")
 
 stats = index_stats()
 if stats["n_docs"] == 0:

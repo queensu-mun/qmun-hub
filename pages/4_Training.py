@@ -15,7 +15,7 @@ user = require_login()
 ROOT = Path(__file__).resolve().parent.parent
 SEED = ROOT / "data" / "seed"
 
-page_header("🎓 Training", "Reference handbook, parli pro, awards rubrics, common mistakes. Zero AI cost on this page.")
+page_header("🎓 Training", "The handbook, the rules, what wins and loses awards.")
 
 tabs = st.tabs([
     "Art of MUN",
@@ -91,77 +91,67 @@ with tabs[3]:
 
 ### Social
 
-- **Skipping the bar after Monday meetings.** Per Jack's notes: only ~20 of 100 members come. Going is how you actually break into the team.
+- **Skipping the bar after Monday meetings.** Only about 20 of 100 members come. It's the unofficial second meeting, and how you actually break into the team.
 - **Not debriefing with your delegation post-conference.** What worked, what didn't, what would you tell your past self before that first session? This is how the team gets better year over year.
 """)
 
 # ----- Social Glue -----
 with tabs[4]:
-    st.markdown("# Social Glue")
+    st.markdown("# How to actually be on the team")
     st.markdown("""
-The Queen's MUN team is socially tight. Per Jack's MUN Claude self-interview:
+The team is socially tight. That's part of why it's good in committee. It can also be intimidating
+to walk in as a first-timer, especially against people who are confident public speakers.
 
-> It can be intimidating to walk onto a team of socially tight individuals who are really good
-> at public speaking. The two ways to break in socially are by **showing up to the bar** after
-> Monday meetings and by **going to conferences**. Going to the bar makes us a better team
-> because we are closer and our friends; we encourage all new members to come, but we need
-> more — only about 20 people a week join out of a 100-person team.
+### Two ways in
 
-### What this means for first-timers
+**Show up to the bar after Monday meetings.** This is the unofficial second meeting. The
+conversations there are where you actually become part of the team. About 20 of 100 members
+come most weeks; we want more.
 
-- The post-Monday-meeting bar trip is the unofficial second meeting. The conversations there
-  are where you actually become part of the team.
-- Conferences are accelerated bonding. A weekend of shared travel, shared committee stress,
-  and shared decompression makes the team feel like a team.
-- If you skip both, you'll feel like an outsider regardless of how good your delegate work is.
+**Go to conferences.** A weekend of shared travel, shared committee stress, and shared
+decompression makes the team feel like a team. You'll come back closer with five or six people
+than you ever could from just the meetings.
 
-### What this means for the directorate
+### The honest version
 
-- The team's competitive performance is downstream of its social cohesion.
-- Awards follow effort and substance, but the willingness to put in effort follows feeling
-  like part of the room.
-- Bar attendance is a leading indicator of how well the team will travel together.
+If you skip both, you'll feel like an outsider regardless of how strong your delegate work is.
+The team's competitive performance is downstream of its social cohesion, not the other way around.
+Awards follow effort, and effort follows feeling like part of the room.
 """)
 
 # ----- Research Framework -----
 with tabs[5]:
-    st.markdown("# Queen's three-question research framework")
+    st.markdown("# The three-question framework")
     st.markdown("""
-The team's standard research methodology, used to prep any country / character on any topic.
-Encoded into the Brief Generator on the Brief page.
+The team's standard prep methodology. Works for any country, any topic, GA or crisis.
+The Brief generator on the Brief page is built around it.
 
-### Question 1: Country / character position
+### 1. Where does my country actually stand?
 
-> How does my country (or character) feel about this issue?
+- What domestic actions have they taken on this issue?
+- What's their UN voting record on related resolutions?
+- What political constraints at home shape the position? (Lobbies, opposition, base voters.)
+- Do they have a stated foreign policy doctrine that applies?
 
-- What domestic actions has the country already taken on this issue?
-- What's their voting record at the UN on related resolutions?
-- What domestic political constraints shape the position? (Lobbies, opposition pressure, base voters)
-- Do they have a stated foreign policy doctrine that applies here?
+### 2. What's the international landscape?
 
-### Question 2: International context
+- What past international action exists? (Treaties, conferences, resolutions, agency reports.)
+- Major bloc dynamics on this topic. (G77, NAM, Western bloc, regional organizations.)
+- What happens next if this committee does nothing?
+- Who's pushing and who's blocking?
 
-> How does the international community feel about this issue?
+### 3. What's my strategy?
 
-- What past international actions exist? (Treaties, conferences, resolutions, UN agency reports)
-- Major bloc dynamics relevant to this topic (G77, NAM, Western bloc, regional organizations)
-- What are the next steps absent intervention by this committee?
-- Who are the issue advocates and who are the blockers?
-
-### Question 3: Committee strategy
-
-> What is my country's strategy in this committee?
-
-- What does winning look like? (Specific, not "support a strong resolution")
+- What does winning look like? Be specific. "Support a strong resolution" is not specific.
 - Which bloc do I lead, join, or split?
-- What concrete operative clauses do I push, and which do I block?
+- Which operative clauses do I push, and which do I block?
 - Who are my natural allies, and who can I pull off opposing blocs?
 
 ### Why three questions
 
-This same framework works for position papers (3 paragraphs), opening speeches (3 beats),
-unmoderated caucus pitches (3 talking points), and crisis directives (situation, response,
-escalation). Once internalized, it scales.
+The same shape works for position papers (three paragraphs), opening speeches (three beats),
+caucus pitches (three talking points), and crisis directives (situation, response, escalation).
+Once you've used it a few times you stop having to think about it.
 """)
 
 st.divider()

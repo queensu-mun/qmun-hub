@@ -21,17 +21,13 @@ class ChatMode(str, Enum):
 
 MODE_DESCRIPTIONS = {
     ChatMode.MENTOR: (
-        "Mentor for delegates. Research help, position prep, opening speeches, bloc strategy. "
-        "Grounded in Queen's MUN culture and the team's three-question framework. Cheap (Haiku)."
+        "Helps you think through a country, draft a speech, or prep for committee."
     ),
     ChatMode.CRISIS_BACKROOM: (
-        "Acts as crisis staff for mock crisis committees. Responds to crisis notes with "
-        "directives outcomes, character actions, world updates, escalations. Solves the team's "
-        "lack-of-backroom-staff gap. Sonnet on demand."
+        "For crisis mocks. You write notes, it writes consequences."
     ),
     ChatMode.CHAIR_ASSISTANT: (
-        "For execs running mocks. Adjudicates points and motions, time-keeping suggestions, "
-        "'is this in order?' calls. Cites parli pro rules. Cheap (Haiku)."
+        "For execs running mocks. Procedural questions, fast answers."
     ),
 }
 

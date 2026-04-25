@@ -12,34 +12,31 @@ st.set_page_config(page_title="Brief · QMUN Hub", page_icon="🌍", layout="wid
 inject_global_css()
 user = require_login()
 
-page_header(
-    "🌍 Country Brief Generator",
-    "Backbone is the team's three-question framework: country position, international context, committee strategy.",
-)
+page_header("🌍 Brief", "A starting point on any country, any topic.")
 
 with st.container(border=True):
-    st.markdown("**New brief**")
     cols = st.columns([1, 1, 1])
     with cols[0]:
-        country = st.text_input("Country / Character", placeholder="e.g. Brazil, Henry Kissinger")
+        country = st.text_input("Country or character", placeholder="Brazil, Henry Kissinger...")
     with cols[1]:
-        committee = st.text_input("Committee", placeholder="e.g. ECOSOC, UNSC, JCC: WW2 Allies")
+        committee = st.text_input("Committee", placeholder="ECOSOC, UNSC, JCC: WW2 Allies...")
     with cols[2]:
         depth_label = st.radio(
             "Depth",
-            ["Mock (1-pg, ~$0.005, ~10s)", "Conference (full, ~$0.05, ~60s)"],
+            ["Mock (one page)", "Conference (full)"],
             horizontal=False,
+            help="Mock takes ~10s, conference takes ~60s and pulls more detail.",
         )
         depth = "mock" if depth_label.startswith("Mock") else "conference"
 
     topic = st.text_area(
         "Topic",
-        placeholder="e.g. Sustainable financing for climate adaptation in SIDS",
+        placeholder="Sustainable financing for climate adaptation in SIDS",
         height=80,
     )
     notes = st.text_area(
-        "Optional notes / framing",
-        placeholder="Anything specific about the conference, scenario, or your delegate strategy.",
+        "Anything else worth knowing? (optional)",
+        placeholder="Conference, scenario, your strategy, what you're stuck on.",
         height=68,
     )
 
