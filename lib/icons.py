@@ -113,66 +113,12 @@ def qmun_logo(*, size: int = 32) -> str:
 '''
 
 
+HERO_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;"><defs><radialGradient id="bgGlow" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#9D1939" stop-opacity="0.15"/><stop offset="100%" stop-color="#0A0A0B" stop-opacity="0"/></radialGradient><linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1F2028"/><stop offset="100%" stop-color="#13131A"/></linearGradient></defs><rect width="600" height="360" fill="url(#bgGlow)"/><g transform="translate(300 180)"><circle r="115" fill="url(#globeGrad)" stroke="#2A2B35" stroke-width="1.5"/><ellipse rx="115" ry="38" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="115" ry="76" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="115" ry="100" fill="none" stroke="#2A2B35" stroke-width="0.6" opacity="0.6"/><ellipse rx="38" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="76" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.8"/><ellipse rx="100" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.6" opacity="0.6"/><path d="M -90 -40 Q 0 -130 90 -40" fill="none" stroke="#9D1939" stroke-width="1.4" opacity="0.9"/><path d="M -100 30 Q 20 -90 100 -10" fill="none" stroke="#B89D5E" stroke-width="1.2" opacity="0.75"/><path d="M -70 60 Q 30 130 95 30" fill="none" stroke="#1B3A6B" stroke-width="1.4" opacity="0.9"/><circle cx="-90" cy="-40" r="4" fill="#9D1939"/><circle cx="90" cy="-40" r="4" fill="#9D1939"/><circle cx="-100" cy="30" r="3" fill="#B89D5E"/><circle cx="100" cy="-10" r="3" fill="#B89D5E"/><circle cx="-70" cy="60" r="4" fill="#1B3A6B"/><circle cx="95" cy="30" r="4" fill="#1B3A6B"/><circle r="2" fill="#F2F2F0" opacity="0.3"/></g><g opacity="0.55"><line x1="50" y1="80" x2="50" y2="50" stroke="#7C7C85" stroke-width="0.8"/><rect x="50" y="50" width="14" height="9" fill="#9D1939"/><line x1="540" y1="100" x2="540" y2="70" stroke="#7C7C85" stroke-width="0.8"/><rect x="540" y="70" width="14" height="9" fill="#1B3A6B"/><line x1="80" y1="290" x2="80" y2="260" stroke="#7C7C85" stroke-width="0.8"/><rect x="80" y="260" width="14" height="9" fill="#B89D5E"/></g></svg>'''
+
+
 def hero_illustration() -> str:
-    """Custom abstract hero: stylized globe with connection arcs, Queen's tricolor accents."""
-    return '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block;">
-  <defs>
-    <radialGradient id="bgGlow" cx="50%" cy="50%" r="60%">
-      <stop offset="0%" stop-color="#9D1939" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#0A0A0B" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1F2028"/>
-      <stop offset="100%" stop-color="#13131A"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Background glow -->
-  <rect width="600" height="360" fill="url(#bgGlow)"/>
-
-  <!-- Globe -->
-  <g transform="translate(300 180)">
-    <circle r="115" fill="url(#globeGrad)" stroke="#2A2B35" stroke-width="1.5"/>
-
-    <!-- Latitude lines -->
-    <ellipse rx="115" ry="38" fill="none" stroke="#2A2B35" stroke-width="0.8"/>
-    <ellipse rx="115" ry="76" fill="none" stroke="#2A2B35" stroke-width="0.8"/>
-    <ellipse rx="115" ry="100" fill="none" stroke="#2A2B35" stroke-width="0.6" opacity="0.6"/>
-
-    <!-- Longitude lines -->
-    <ellipse rx="38" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.8"/>
-    <ellipse rx="76" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.8"/>
-    <ellipse rx="100" ry="115" fill="none" stroke="#2A2B35" stroke-width="0.6" opacity="0.6"/>
-
-    <!-- Connection arcs -->
-    <path d="M -90 -40 Q 0 -130 90 -40" fill="none" stroke="#9D1939" stroke-width="1.2" opacity="0.85"/>
-    <path d="M -100 30 Q 20 -90 100 -10" fill="none" stroke="#B89D5E" stroke-width="1" opacity="0.7"/>
-    <path d="M -70 60 Q 30 130 95 30" fill="none" stroke="#1B3A6B" stroke-width="1.2" opacity="0.85"/>
-
-    <!-- Connection nodes -->
-    <circle cx="-90" cy="-40" r="3.5" fill="#9D1939"/>
-    <circle cx="90" cy="-40" r="3.5" fill="#9D1939"/>
-    <circle cx="-100" cy="30" r="2.5" fill="#B89D5E"/>
-    <circle cx="100" cy="-10" r="2.5" fill="#B89D5E"/>
-    <circle cx="-70" cy="60" r="3.5" fill="#1B3A6B"/>
-    <circle cx="95" cy="30" r="3.5" fill="#1B3A6B"/>
-
-    <!-- Center subtle dot -->
-    <circle r="2" fill="#F2F2F0" opacity="0.3"/>
-  </g>
-
-  <!-- Decorative flag pins on the side -->
-  <g opacity="0.5">
-    <line x1="50" y1="80" x2="50" y2="50" stroke="#7C7C85" stroke-width="0.8"/>
-    <rect x="50" y="50" width="14" height="9" fill="#9D1939"/>
-    <line x1="540" y1="100" x2="540" y2="70" stroke="#7C7C85" stroke-width="0.8"/>
-    <rect x="540" y="70" width="14" height="9" fill="#1B3A6B"/>
-    <line x1="80" y1="290" x2="80" y2="260" stroke="#7C7C85" stroke-width="0.8"/>
-    <rect x="80" y="260" width="14" height="9" fill="#B89D5E"/>
-  </g>
-</svg>
-'''
+    """Hero SVG wrapped in a self-contained HTML doc for st.components.v1.html iframe."""
+    return f'''<!DOCTYPE html><html><head><style>html,body{{margin:0;padding:0;background:transparent;overflow:hidden;}}</style></head><body>{HERO_SVG}</body></html>'''
 
 
 def tricolor_bar(*, height: int = 3) -> str:

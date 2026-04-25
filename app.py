@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from lib import state as state_lib
 from lib.auth import require_login
@@ -77,7 +78,7 @@ with hero_left:
     )
 
 with hero_right:
-    st.markdown(hero_illustration(), unsafe_allow_html=True)
+    components.html(hero_illustration(), height=320)
 
 st.markdown("<div style='height: 3rem;'></div>", unsafe_allow_html=True)
 
