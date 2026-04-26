@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterator
 
+from lib import state as state_lib
 from lib.budget import record_call
 from lib.claude import Tier, chat, stream_chat
 
@@ -158,9 +159,36 @@ class CrisisScenario:
         return "\n".join(parts)
 
 
-def _system_for(mode: ChatMode, scenario: CrisisScenario | None) -> str:
+def _delegate_context_block(name: str | None) -> str:
+    if not name:
+        return ""
+    entry = state_lib.roster_lookup(name)
+    if not entry:
+        return ""
+    status = entry.get("status", "rookie")
+    year = entry.get("year")
+    if status == "rookie":
+        coaching = (
+            "This delegate is new. Slow down on procedure. Check understanding "
+            "before piling on tactics. Build their confidence with concrete, "
+            "small wins (one good clause beats a broken bloc strategy)."
+        )
+    else:
+        coaching = (
+            "This delegate is a returning veteran. Skip the basics, push hard "
+            "on tactical edge: bloc-flipping, parli pro plays, award-tier "
+            "operative clauses, second-order strategy."
+        )
+    return (
+        "\n\n--- DELEGATE CONTEXT ---\n"
+        f"You are talking with {entry['name']} (year {year}, {status}).\n"
+        f"Coaching note: {coaching}\n"
+    )
+
+
+def _system_for(mode: ChatMode, scenario: CrisisScenario | None, delegate_name: str | None = None) -> str:
     if mode == ChatMode.MENTOR:
-        return _MENTOR_SYSTEM
+        return _MENTOR_SYSTEM + _delegate_context_block(delegate_name)
     if mode == ChatMode.CHAIR_ASSISTANT:
         return _CHAIR_ASSISTANT_SYSTEM
     if mode == ChatMode.CRISIS_BACKROOM:
@@ -193,9 +221,10 @@ def respond(
     *,
     user_slack_id: str = "anonymous",
     scenario: CrisisScenario | None = None,
+    delegate_name: str | None = None,
 ) -> tuple[str, float]:
     """Return (assistant_text, cost_usd). Records call to budget."""
-    system = _system_for(mode, scenario)
+    system = _system_for(mode, scenario, delegate_name)
     tier = _tier_for(mode)
 
     result = chat(
@@ -227,9 +256,10 @@ def stream_respond(
     *,
     user_slack_id: str = "anonymous",
     scenario: CrisisScenario | None = None,
+    delegate_name: str | None = None,
 ) -> Iterator[tuple[str, float | None]]:
     """Yield (text_delta, None) until done, then ('', cost_usd)."""
-    system = _system_for(mode, scenario)
+    system = _system_for(mode, scenario, delegate_name)
     tier = _tier_for(mode)
 
     final = None

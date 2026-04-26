@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Iterator, Literal
 
+from lib import state as state_lib
 from lib.budget import record_call
 from lib.cache import CacheKey, get as cache_get, put as cache_put, week_start_of
 from lib.claude import Tier, chat, stream_chat
@@ -24,6 +25,37 @@ class BriefRequest:
     depth: Depth
     notes: str | None = None
     user_slack_id: str = "anonymous"
+    delegate_name: str | None = None     # if known, brief tailors to roster status
+
+
+def _delegate_context_block(name: str | None) -> str:
+    """Look up delegate in roster; return a coaching context block, else ''."""
+    if not name:
+        return ""
+    entry = state_lib.roster_lookup(name)
+    if not entry:
+        return ""
+    status = entry.get("status", "rookie")
+    year = entry.get("year")
+    if status == "rookie":
+        guidance = (
+            "This delegate is new to the Queen's MUN team. Prioritize procedural "
+            "fundamentals and confidence-building. Define jargon the first time "
+            "it appears. Lean toward 1-2 strong, simple operative clauses they can "
+            "actually deliver, over a complex bloc strategy they cannot execute yet."
+        )
+    else:
+        guidance = (
+            "This delegate is a returning veteran. Skip the basics. Push for "
+            "tactical edge: bloc-flipping, parliamentary procedure manipulation, "
+            "high-leverage operative clauses. Treat them as someone aiming for an "
+            "award-tier performance."
+        )
+    return (
+        "\n\n--- DELEGATE CONTEXT ---\n"
+        f"Delegate: {entry['name']} (year {year}, {status})\n"
+        f"Coaching note: {guidance}\n"
+    )
 
 
 @dataclass
@@ -106,9 +138,10 @@ Output ONLY the brief itself in markdown. Do not include preamble, meta-commenta
 """.format(framework=_THREE_Q_FRAMEWORK)
 
 
-def _build_system(depth: Depth) -> str:
+def _build_system(depth: Depth, delegate_name: str | None = None) -> str:
     instructions = _MOCK_INSTRUCTIONS if depth == "mock" else _CONFERENCE_INSTRUCTIONS
-    return f"{_BASE_SYSTEM}\n\n---\n\n{instructions}"
+    delegate_block = _delegate_context_block(delegate_name)
+    return f"{_BASE_SYSTEM}\n\n---\n\n{instructions}{delegate_block}"
 
 
 def _scrub_em_dashes(text: str) -> str:
@@ -151,7 +184,7 @@ def generate(req: BriefRequest, *, force_refresh: bool = False) -> Brief:
     tier = Tier.CHEAP if req.depth == "mock" else Tier.SMART
     max_tokens = 1200 if req.depth == "mock" else 4000
 
-    system = _build_system(req.depth)
+    system = _build_system(req.depth, req.delegate_name)
     user = _build_user_message(req)
 
     result = chat(
@@ -195,7 +228,7 @@ def generate_streaming(req: BriefRequest) -> Iterator[tuple[str, Brief | None]]:
 
     tier = Tier.CHEAP if req.depth == "mock" else Tier.SMART
     max_tokens = 1200 if req.depth == "mock" else 4000
-    system = _build_system(req.depth)
+    system = _build_system(req.depth, req.delegate_name)
     user = _build_user_message(req)
 
     final = None

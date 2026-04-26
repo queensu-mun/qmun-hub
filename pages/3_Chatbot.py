@@ -134,6 +134,7 @@ with chat_col:
                 history,
                 user_slack_id=user.slack_id,
                 scenario=scenario,
+                delegate_name=user.name,
             ):
                 if c is None:
                     accumulated += delta

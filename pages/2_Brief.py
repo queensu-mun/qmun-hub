@@ -66,6 +66,7 @@ if generate_btn:
             depth=depth,
             notes=notes.strip() if notes else None,
             user_slack_id=user.slack_id,
+            delegate_name=user.name,
         )
 
         st.markdown("### Brief")

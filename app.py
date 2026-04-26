@@ -186,6 +186,42 @@ elif user.is_exec:
         unsafe_allow_html=True,
     )
 
+# ---------------- Upcoming socials ----------------
+upcoming = state_lib.upcoming_socials(limit=3)
+if upcoming:
+    st.markdown("<div class='section-head'><h3>Upcoming socials</h3></div>", unsafe_allow_html=True)
+    for s in upcoming:
+        days_to = ""
+        try:
+            d = datetime.fromisoformat(s["date"]).date()
+            delta = (d - date.today()).days
+            if delta == 0:
+                days_to = "today"
+            elif delta == 1:
+                days_to = "tomorrow"
+            elif delta > 1:
+                days_to = f"in {delta} days"
+        except Exception:
+            pass
+        location = s.get("location") or ""
+        notes = s.get("notes") or ""
+        meta_bits = [s["date"]]
+        if days_to:
+            meta_bits.append(days_to)
+        if location:
+            meta_bits.append(location)
+        st.markdown(
+            f"""
+<div class='activity-row'>
+  <div>
+    <div class='activity-title'>{s.get('type', 'social').title()}</div>
+    <div class='activity-meta'>{' · '.join(meta_bits)}{(' · ' + notes) if notes else ''}</div>
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
 # ---------------- Recent briefs ----------------
 briefs = recent_briefs(limit=4)
 if briefs:

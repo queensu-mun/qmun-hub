@@ -13,5 +13,9 @@
     "delegate_chat_turns_per_week": 30,
     "delegate_briefs_per_week": 10,
     "delegate_crisis_interactions_per_week": 5
-  }
+  },
+  "feedback": [],
+  "team_insights_cache": null,
+  "socials": [],
+  "delegations": []
 }
