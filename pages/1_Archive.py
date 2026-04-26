@@ -5,7 +5,7 @@ import streamlit as st
 from lib.auth import require_login
 from lib.index import doc_text, index_stats, list_docs
 from lib.search import hybrid_search
-from lib.ui import brand_footer, inject_global_css, page_header, tag, top_nav
+from lib.ui import brand_footer, inject_global_css, page_header, top_nav
 
 st.set_page_config(page_title="Archive · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
@@ -13,7 +13,7 @@ user = require_login()
 top_nav(user)
 
 DOC_TYPE_LABELS = {
-    "All": None,
+    "All types": None,
     "Position paper": "position_paper",
     "Study guide": "study_guide",
     "Alumni interview": "alumni_interview",
@@ -32,31 +32,47 @@ if stats["n_docs"] == 0:
     brand_footer()
     st.stop()
 
-# Compact filter row, no card wrapper
+# ---------------- Search bar (single line) ----------------
 seeded_query = st.session_state.pop("archive_seed_query", "")
-cols = st.columns([4, 1.2, 1.2, 1])
-with cols[0]:
+all_years = sorted({d["year"] for d in list_docs() if d["year"]}, reverse=True)
+
+search_cols = st.columns([4, 1.4, 1.2, 1])
+with search_cols[0]:
     query = st.text_input(
         "Search",
         value=seeded_query,
-        placeholder="Try: crisis directives, China climate, Khmer Rouge, parli pro motions...",
+        placeholder="Try: unmod caucus, China climate, Khmer Rouge, awards rubric...",
         label_visibility="collapsed",
     )
-with cols[1]:
+with search_cols[1]:
     doc_type_label = st.selectbox("Type", list(DOC_TYPE_LABELS.keys()), label_visibility="collapsed")
-with cols[2]:
-    years = sorted({d["year"] for d in list_docs() if d["year"]}, reverse=True)
-    year_choice = st.selectbox("Year", ["All years"] + years, label_visibility="collapsed")
-with cols[3]:
+with search_cols[2]:
+    year_choice = st.selectbox("Year", ["All years"] + all_years, label_visibility="collapsed")
+with search_cols[3]:
     submitted = st.button("Search", type="primary", use_container_width=True)
 if seeded_query:
     submitted = True
 
-st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:1.5rem;'></div>", unsafe_allow_html=True)
+
+# ---------------- Results or default doc list ----------------
+def _meta_line(doc_type: str, year: int | None, quality: str | None, extra: str = "") -> str:
+    parts = [DOC_TYPE_DISPLAY.get(doc_type, doc_type)]
+    if year:
+        parts.append(str(year))
+    if quality == "exemplary":
+        parts.append("⭐ exemplary")
+    elif quality == "outdated":
+        parts.append("outdated")
+    if extra:
+        parts.append(extra)
+    return " · ".join(parts)
+
 
 if submitted and query:
     doc_type = DOC_TYPE_LABELS.get(doc_type_label)
     year = year_choice if isinstance(year_choice, int) else None
+
     with st.spinner("Searching..."):
         hits = hybrid_search(
             query, top_k=15,
@@ -64,84 +80,62 @@ if submitted and query:
             year=year,
             exec_visible=user.is_exec,
         )
+
     if not hits:
         st.info("No results. Try a different query or remove filters.")
     else:
-        st.markdown(
-            f"<div class='subtle' style='margin-bottom:0.75rem;'>{len(hits)} result(s)</div>",
-            unsafe_allow_html=True,
-        )
+        st.caption(f"{len(hits)} result{'s' if len(hits) != 1 else ''}")
         for h in hits:
-            badges = tag(DOC_TYPE_DISPLAY.get(h.doc_type, h.doc_type))
-            if h.year:
-                badges += " " + tag(str(h.year))
-            if h.quality_flag == "exemplary":
-                badges += " " + tag("Exemplary", accent=True)
-            elif h.quality_flag == "outdated":
-                badges += " " + tag("outdated")
-
-            st.markdown(
-                f"""
-<div class='result-row'>
-  <div class='result-title'>{h.doc_title}</div>
-  <div class='result-meta'>{badges}</div>
-  <div class='result-snippet'>{h.snippet}</div>
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-            btn_cols = st.columns([1, 1, 6])
-            with btn_cols[0]:
+            st.markdown(f"#### {h.doc_title}")
+            st.caption(_meta_line(h.doc_type, h.year, h.quality_flag))
+            st.markdown(f"> {h.snippet}")
+            row = st.columns([1, 1, 6])
+            with row[0]:
                 if st.button("Open", key=f"open_{h.chunk_id}"):
                     st.session_state["archive_open_doc"] = h.doc_id
-            with btn_cols[1]:
+            with row[1]:
                 if st.button("Ask mentor", key=f"ask_{h.chunk_id}"):
                     st.session_state["mentor_seed_question"] = (
                         f"Help me understand the relevant parts of '{h.doc_title}' "
                         f"for someone preparing on this topic: {query}"
                     )
                     st.switch_page("pages/3_Chatbot.py")
-            st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 1.25rem 0;'/>", unsafe_allow_html=True)
 
 elif submitted and not query:
     st.error("Enter a search query.")
 else:
-    # Default view: indexed documents as a clean list, not a grid of cards
-    st.markdown("<h2 style='font-size:1.1rem; margin-top:1rem;'>Indexed documents</h2>", unsafe_allow_html=True)
+    # Default: simple list of indexed docs
+    st.markdown(
+        "<div class='subtle' style='text-transform:uppercase; letter-spacing:0.12em; font-size:0.7rem; "
+        "font-weight:600; margin-bottom:0.75rem;'>All documents</div>",
+        unsafe_allow_html=True,
+    )
     docs = list_docs()
     visible = [d for d in docs if user.is_exec or d["visibility"] == "team"]
     for d in visible:
-        badges = tag(DOC_TYPE_DISPLAY.get(d["doc_type"], d["doc_type"]))
-        if d["year"]:
-            badges += " " + tag(str(d["year"]))
-        if d["quality_flag"] == "exemplary":
-            badges += " " + tag("Exemplary", accent=True)
-        st.markdown(
-            f"""
-<div class='doc-row'>
-  <div>
-    <div class='doc-row-title'>{d['title']}</div>
-    <div class='doc-row-meta'>{badges} <span class='subtle'>· {d['chunk_count']} chunks · indexed {d['indexed_at'][:10]}</span></div>
-  </div>
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-        if st.button("Open", key=f"recent_open_{d['doc_id']}"):
-            st.session_state["archive_open_doc"] = d["doc_id"]
+        title_col, meta_col, btn_col = st.columns([4, 3, 1])
+        with title_col:
+            st.markdown(f"**{d['title']}**")
+        with meta_col:
+            st.caption(_meta_line(d["doc_type"], d["year"], d["quality_flag"], f"{d['chunk_count']} chunks"))
+        with btn_col:
+            if st.button("Open", key=f"recent_open_{d['doc_id']}", use_container_width=True):
+                st.session_state["archive_open_doc"] = d["doc_id"]
+        st.markdown("<hr style='margin: 0.75rem 0;'/>", unsafe_allow_html=True)
 
-# Doc viewer below
+# ---------------- Doc viewer ----------------
 if "archive_open_doc" in st.session_state:
     st.divider()
     doc_id = st.session_state["archive_open_doc"]
     text = doc_text(doc_id)
     if text:
-        st.markdown("<h2>Document</h2>", unsafe_allow_html=True)
-        st.markdown(text[:50_000])
-        if len(text) > 50_000:
-            st.caption(f"_(truncated; full doc is {len(text):,} chars)_")
-        if st.button("Close document"):
+        if st.button("← Back to results"):
             st.session_state.pop("archive_open_doc", None)
             st.rerun()
+        st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+        st.markdown(text[:80_000])
+        if len(text) > 80_000:
+            st.caption(f"_(truncated; full doc is {len(text):,} chars)_")
 
 brand_footer()

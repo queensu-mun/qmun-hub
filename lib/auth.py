@@ -41,25 +41,15 @@ def _resolve_role(slack_id: str) -> Role:
     return "delegate"
 
 
-def _dev_login_form() -> User | None:
-    st.markdown("# 🌐 QMUN Hub")
-    st.caption("Dev sign-in (Slack OAuth wired up in Phase 1.4)")
-    with st.form("dev_login"):
-        name = st.text_input("Display name", placeholder="First Last")
-        slack_id = st.text_input("Slack user ID", placeholder="U_XXXXX (use U_JACK_DEV for exec access)")
-        submitted = st.form_submit_button("Sign in", type="primary")
-    if submitted and name and slack_id:
-        user = User(slack_id=slack_id, name=name, role=_resolve_role(slack_id))
-        st.session_state["user"] = user
-        st.rerun()
-    return None
+_DEV_USER = User(slack_id="U_JACK_DEV", name="Jack Guillemette", role="admin")
 
 
 def require_login() -> User:
+    """Auto-login default dev user. Real Slack OAuth lands when team has a workspace."""
     user = st.session_state.get("user")
     if user is None:
-        _dev_login_form()
-        st.stop()
+        st.session_state["user"] = _DEV_USER
+        return _DEV_USER
     return user
 
 
