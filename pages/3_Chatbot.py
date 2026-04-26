@@ -31,27 +31,18 @@ if user.is_exec:
 if "chat_mode_select" not in st.session_state:
     st.session_state["chat_mode_select"] = ChatMode.MENTOR
 
-# ----------------- Mode segmented control (top of page, no sidebar) -----------------
-st.markdown("<div class='eyebrow'>Chatbot</div>", unsafe_allow_html=True)
-
-# Render mode buttons as a row
-mode_cols = st.columns([1] * len(mode_options) + [4])
-for i, m in enumerate(mode_options):
-    with mode_cols[i]:
-        is_selected = st.session_state["chat_mode_select"] == m
-        if st.button(
-            mode_label[m],
-            key=f"mode_btn_{m.value}",
-            type="primary" if is_selected else "secondary",
-            use_container_width=True,
-        ):
-            st.session_state["chat_mode_select"] = m
-            st.rerun()
-
-selected = st.session_state["chat_mode_select"]
+# ----------------- Mode selector (compact horizontal radio) -----------------
+selected = st.radio(
+    "Mode",
+    mode_options,
+    format_func=lambda m: mode_label[m],
+    horizontal=True,
+    label_visibility="collapsed",
+    key="chat_mode_select",
+)
 
 # Page title + lede for selected mode
-st.markdown(f"<h1 style='margin-top:1rem;'>{mode_label[selected]}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='margin-top:0.75rem;'>{mode_label[selected]}</h1>", unsafe_allow_html=True)
 st.markdown(f"<div class='lede'>{MODE_DESCRIPTIONS[selected]}</div>", unsafe_allow_html=True)
 
 # ----------------- Layout: chat (left), context rail (right) -----------------

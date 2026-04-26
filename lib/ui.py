@@ -556,6 +556,77 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     margin-right: 4px;
 }
 
+/* Horizontal radio styled as segmented control */
+.stRadio[role="radiogroup"], div[data-testid="stRadio"] > div[role="radiogroup"] {
+    display: inline-flex !important;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 0 !important;
+}
+div[data-testid="stRadio"] label {
+    padding: 0.4rem 1rem !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+    cursor: pointer;
+    font-size: 0.85rem !important;
+    color: var(--text-muted) !important;
+    transition: all 140ms ease;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-weight: 500 !important;
+}
+div[data-testid="stRadio"] label:hover { color: var(--text) !important; }
+div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child { display: none !important; }
+div[data-testid="stRadio"] label:has(input:checked) {
+    background: var(--accent-soft) !important;
+    color: var(--accent) !important;
+    font-weight: 600 !important;
+}
+
+/* Search result rows (Archive) */
+.result-row {
+    padding: 1rem 0 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+.result-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.4rem;
+}
+.result-meta { margin-bottom: 0.5rem; }
+.result-snippet {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin: 0.5rem 0 0;
+    border-left: 2px solid var(--border-strong);
+    padding-left: 0.85rem;
+}
+
+/* Doc list row (Archive default view) */
+.doc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+}
+.doc-row-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+}
+.doc-row-meta { font-size: 0.78rem; }
+
 /* Activity row (recent briefs / etc) */
 .activity-row {
     display: flex;

@@ -4,12 +4,10 @@ from datetime import date, datetime
 from pathlib import Path
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 from lib import state as state_lib
 from lib.auth import require_login
 from lib.cache import recent as recent_briefs
-from lib.icons import hero_illustration
 from lib.ui import brand_footer, inject_global_css, top_nav
 
 ROOT = Path(__file__).resolve().parent
@@ -49,7 +47,13 @@ if announcement and announcement.get("text"):
     )
 
 # ---------------- Hero ----------------
-hero_left, hero_right = st.columns([1.2, 1], gap="large")
+if HERO_PHOTO.exists():
+    # Two-column layout when a real photo is present
+    hero_left, hero_right = st.columns([1.2, 1], gap="large")
+    with hero_right:
+        st.image(str(HERO_PHOTO), use_container_width=True)
+else:
+    hero_left = st.container()
 
 with hero_left:
     st.markdown(f"<div class='hero-display'>{first_name}.</div>", unsafe_allow_html=True)
@@ -87,18 +91,6 @@ with hero_left:
         elif action == "Ask":
             st.session_state["mentor_seed_question"] = cmd
             st.switch_page("pages/3_Chatbot.py")
-
-with hero_right:
-    if HERO_PHOTO.exists():
-        st.image(str(HERO_PHOTO), use_container_width=True)
-    else:
-        components.html(hero_illustration(), height=280)
-        st.markdown(
-            "<div class='subtle' style='font-size:0.72rem; text-align:right; margin-top:4px; color:var(--text-faint);'>"
-            "Drop a photo at <code>assets/hero.jpg</code> to replace this illustration."
-            "</div>",
-            unsafe_allow_html=True,
-        )
 
 st.markdown("<div style='height:2.5rem;'></div>", unsafe_allow_html=True)
 

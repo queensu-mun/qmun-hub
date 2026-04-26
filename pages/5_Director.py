@@ -82,11 +82,23 @@ with tabs[1]:
 
 # ----------------- TAB 2: Conferences -----------------
 with tabs[2]:
-    st.markdown("### Upcoming and recent conferences")
+    st.markdown("### Conferences")
     confs = state.get("conferences", [])
     if confs:
-        df = pd.DataFrame(confs)[["name", "location", "start_date", "end_date", "registration_deadline", "fees_per_delegate_usd"]]
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        for c in confs:
+            fees = f"${c['fees_per_delegate_usd']:.0f}" if c.get("fees_per_delegate_usd") else "—"
+            reg = c.get("registration_deadline") or "—"
+            st.markdown(
+                f"""
+<div class='doc-row'>
+  <div>
+    <div class='doc-row-title'>{c['name']}</div>
+    <div class='doc-row-meta subtle'>{c['location']} · {c['start_date']} → {c['end_date']} · reg by {reg} · {fees}/delegate</div>
+  </div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
     else:
         st.caption("No conferences yet.")
 
@@ -128,10 +140,19 @@ with tabs[3]:
     else:
         conf_lookup = {c["id"]: c["name"] for c in confs}
         if assignments:
-            df = pd.DataFrame(assignments)
-            df["conference"] = df["conference_id"].map(conf_lookup)
-            display_cols = ["conference", "delegate_name", "committee", "country_or_character", "status", "notes"]
-            st.dataframe(df[display_cols], use_container_width=True, hide_index=True)
+            for a in assignments:
+                conf_name = conf_lookup.get(a["conference_id"], "?")
+                st.markdown(
+                    f"""
+<div class='doc-row'>
+  <div>
+    <div class='doc-row-title'>{a['delegate_name']} <span class='subtle' style='font-weight:500;'>·</span> {a['country_or_character']}</div>
+    <div class='doc-row-meta subtle'>{conf_name} · {a['committee']} · {a.get('status', 'assigned')}</div>
+  </div>
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
         else:
             st.caption("No assignments yet.")
 
@@ -231,8 +252,19 @@ with tabs[5]:
     st.markdown("### Top users this month")
     rows = top_users(20)
     if rows:
-        df = pd.DataFrame(rows, columns=["user_slack_id", "cost_usd", "calls"])
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        for u, cost, calls in rows:
+            st.markdown(
+                f"""
+<div class='doc-row'>
+  <div>
+    <div class='doc-row-title'>{u}</div>
+    <div class='doc-row-meta subtle'>{calls} call{'s' if calls != 1 else ''}</div>
+  </div>
+  <div style='font-family:Inter Tight, sans-serif; font-weight:600; color:var(--text);'>${cost:.4f}</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
     else:
         st.caption("No usage yet this month.")
 
