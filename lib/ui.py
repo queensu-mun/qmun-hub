@@ -471,6 +471,41 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     font-size: 1.05rem;
     margin-right: 4px;
 }
+
+/* Activity row (recent briefs / etc) */
+.activity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 140ms ease;
+    gap: 1rem;
+}
+.activity-row:hover { background: rgba(20, 35, 55, 0.4); }
+.activity-row:last-child { border-bottom: 0; }
+.activity-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.95rem;
+    margin-bottom: 3px;
+    letter-spacing: -0.01em;
+}
+.activity-sep { color: var(--text-faint); margin: 0 4px; }
+.activity-meta { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; }
+.activity-tag {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
 </style>
 """
 
@@ -537,7 +572,8 @@ def top_nav(user) -> None:
     if user.is_exec:
         pages.append(("Director", "pages/5_Director.py"))
 
-    nav_cols = st.columns([1] * len(pages) + [4])  # spacer column eats remaining width
+    # Equal-weight columns spread links evenly across the full width.
+    nav_cols = st.columns(len(pages))
     for col, (label, path) in zip(nav_cols, pages):
         with col:
             st.page_link(path, label=label)

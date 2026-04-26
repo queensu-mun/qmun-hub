@@ -5,22 +5,9 @@ import streamlit.components.v1 as components
 
 from lib import state as state_lib
 from lib.auth import require_login
-from lib.icons import (
-    archive,
-    book,
-    brief,
-    chat,
-    hero_illustration,
-    mic,
-    target,
-)
-from lib.index import index_stats
-from lib.ui import (
-    brand_footer,
-    feature_tile,
-    inject_global_css,
-    top_nav,
-)
+from lib.cache import recent as recent_briefs
+from lib.icons import hero_illustration
+from lib.ui import brand_footer, inject_global_css, top_nav
 
 st.set_page_config(
     page_title="Queen's MUN",
@@ -53,31 +40,15 @@ with hero_left:
         "</div>",
         unsafe_allow_html=True,
     )
-    stats = index_stats()
-    confs = state.get("conferences", [])
-    st.markdown(
-        f"""
-<div class='stat-line'>
-  <div><span class='stat-num'>{stats['n_docs']}</span>docs indexed</div>
-  <div><span class='stat-num'>{stats['n_chunks']}</span>chunks searchable</div>
-  <div><span class='stat-num'>{len(confs)}</span>conferences tracked</div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
 
 with hero_right:
     components.html(hero_illustration(), height=320)
 
-st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:2.5rem;'></div>", unsafe_allow_html=True)
 
 # ---------------- This week ----------------
 if mon or thu:
-    st.markdown(
-        "<div class='section-head'><h3>This week</h3>"
-        "<a href='/Director' class='section-aux'>Manage in Director →</a></div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div class='section-head'><h3>This week</h3></div>", unsafe_allow_html=True)
 
     cells = []
     if mon:
@@ -101,57 +72,40 @@ if mon or thu:
 """
         )
     st.markdown(f"<div class='week-strip'>{''.join(cells)}</div>", unsafe_allow_html=True)
-
-# ---------------- Tools ----------------
-st.markdown("<div class='section-head'><h3>Tools</h3></div>", unsafe_allow_html=True)
-
-cols = st.columns(3, gap="large")
-with cols[0]:
-    feature_tile(
-        icon_svg=brief(size=22),
-        title="Brief",
-        blurb="Generate a starting point on any country, topic, or committee.",
-        page_path="pages/2_Brief.py",
-    )
-with cols[1]:
-    feature_tile(
-        icon_svg=archive(size=22),
-        title="Archive",
-        blurb="Search past papers, study guides, and alumni interviews.",
-        page_path="pages/1_Archive.py",
-    )
-with cols[2]:
-    feature_tile(
-        icon_svg=chat(size=22),
-        title="Chatbot",
-        blurb="Mentor for prep, backroom for crisis, parli pro for chairs.",
-        page_path="pages/3_Chatbot.py",
+else:
+    st.markdown("<div class='section-head'><h3>This week</h3></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='subtle' style='padding: 1rem 0 2rem;'>"
+        "No mock topics set. The director can set them in "
+        "<a href='/Director' style='color:var(--accent); border-bottom:none;'>Director tools</a>."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
-st.markdown("<div style='height:1.5rem;'></div>", unsafe_allow_html=True)
+# ---------------- Recent activity ----------------
+st.markdown("<div class='section-head'><h3>Recent briefs</h3></div>", unsafe_allow_html=True)
 
-cols2 = st.columns(3, gap="large")
-with cols2[0]:
-    feature_tile(
-        icon_svg=book(size=22),
-        title="Training",
-        blurb="Art of MUN, parli pro cheat sheet, awards rubric, common mistakes.",
-        page_path="pages/4_Training.py",
-    )
-with cols2[1]:
-    feature_tile(
-        icon_svg=mic(size=22),
-        title="Tell us what you know",
-        blurb="Share what you learned with the team. Five minutes, future-proofs the playbook.",
-        page_path="pages/6_Alumni_Interview.py",
-    )
-with cols2[2]:
-    if user.is_exec:
-        feature_tile(
-            icon_svg=target(size=22),
-            title="Director tools",
-            blurb="Weekly topics, conferences, assignments, costs, archive curation.",
-            page_path="pages/5_Director.py",
+briefs = recent_briefs(limit=4)
+if briefs:
+    for b in briefs:
+        st.markdown(
+            f"""
+<div class='activity-row'>
+  <div>
+    <div class='activity-title'>{b['country']} <span class='activity-sep'>·</span> {b['committee']}</div>
+    <div class='activity-meta'>{b['topic']}</div>
+  </div>
+  <div class='activity-tag'>{b['depth']}</div>
+</div>
+""",
+            unsafe_allow_html=True,
         )
+else:
+    st.markdown(
+        "<div class='subtle' style='padding: 0.75rem 0 0;'>"
+        "No briefs generated yet this week. <a href='/Brief' style='color:var(--accent); border-bottom:none;'>Generate your first →</a>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 brand_footer()
