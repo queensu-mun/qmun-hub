@@ -36,12 +36,12 @@ if stats["n_docs"] == 0:
 seeded_query = st.session_state.pop("archive_seed_query", "")
 all_years = sorted({d["year"] for d in list_docs() if d["year"]}, reverse=True)
 
-search_cols = st.columns([4, 1.4, 1.2, 1])
+search_cols = st.columns([6, 1.5, 1.2, 1])
 with search_cols[0]:
     query = st.text_input(
         "Search",
         value=seeded_query,
-        placeholder="Try: unmod caucus, China climate, Khmer Rouge, awards rubric...",
+        placeholder="Search the archive...",
         label_visibility="collapsed",
     )
 with search_cols[1]:

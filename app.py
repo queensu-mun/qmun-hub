@@ -79,11 +79,11 @@ with hero_left:
     )
 
     # Command bar
-    cb_cols = st.columns([5, 1])
+    cb_cols = st.columns([4, 1.2])
     with cb_cols[0]:
         cmd = st.text_input(
-            "Search the archive, prep a country, ask a question...",
-            placeholder="Search the archive, prep a country, ask a question...",
+            "Command",
+            placeholder="Search, prep a country, ask...",
             label_visibility="collapsed",
             key="home_command_bar",
         )
