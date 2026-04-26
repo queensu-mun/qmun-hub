@@ -5,6 +5,7 @@ data/archive.db
 data/usage.db
 data/*.db-journal
 data/cache/
+data/uploads/
 service_account.json
 *.pyc
 __pycache__/

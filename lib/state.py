@@ -64,12 +64,18 @@ class Delegate:
 
 @dataclass
 class Social:
-    """A team social event (lineskip night, formal, dinner, etc)."""
+    """A team social event (lineskip night, formal, dinner, etc).
+
+    attachments is a list of dicts: {filename, stored_path, mime_type,
+    size_bytes, uploaded_by, uploaded_at}. Stored on disk under
+    data/uploads/socials/{id}/ (gitignored).
+    """
     id: str
     date: str                          # ISO date
     type: str                          # lineskip | formal | dinner | other
     location: str | None = None
     notes: str | None = None
+    attachments: list[dict] = field(default_factory=list)
     created_by: str | None = None
     created_at: str | None = None
 
@@ -328,6 +334,12 @@ def remove_social(social_id: str) -> None:
     with edit() as state:
         _normalize_state(state)
         state["socials"] = [s for s in state["socials"] if s["id"] != social_id]
+    # also nuke any uploaded files for this social
+    upload_dir = SOCIAL_UPLOAD_ROOT / social_id
+    if upload_dir.exists():
+        for f in upload_dir.iterdir():
+            f.unlink(missing_ok=True)
+        upload_dir.rmdir()
 
 
 def list_socials() -> list[dict]:
@@ -342,6 +354,77 @@ def upcoming_socials(limit: int = 3) -> list[dict]:
     today = datetime.utcnow().date().isoformat()
     rows = [s for s in list_socials() if (s.get("date") or "") >= today]
     return rows[:limit]
+
+
+SOCIAL_UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "data" / "uploads" / "socials"
+
+
+def _safe_filename(name: str) -> str:
+    """Strip path separators and unsafe chars from a user-supplied filename."""
+    name = name.replace("\\", "/").rsplit("/", 1)[-1]
+    return "".join(c for c in name if c.isalnum() or c in ("-", "_", ".", " ")).strip() or "file"
+
+
+def add_social_attachment(
+    social_id: str,
+    *,
+    filename: str,
+    data: bytes,
+    mime_type: str | None,
+    uploaded_by: str | None = None,
+) -> dict:
+    """Save a file under data/uploads/socials/{social_id}/ and append to the social's attachments."""
+    safe = _safe_filename(filename)
+    target_dir = SOCIAL_UPLOAD_ROOT / social_id
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    target_path = target_dir / safe
+    if target_path.exists():
+        # don't overwrite — suffix with a counter
+        stem = target_path.stem
+        ext = target_path.suffix
+        n = 1
+        while target_path.exists():
+            target_path = target_dir / f"{stem}_{n}{ext}"
+            n += 1
+
+    target_path.write_bytes(data)
+
+    attachment = {
+        "filename": target_path.name,
+        "stored_path": str(target_path),
+        "mime_type": mime_type or "application/octet-stream",
+        "size_bytes": len(data),
+        "uploaded_by": uploaded_by,
+        "uploaded_at": datetime.utcnow().isoformat(),
+    }
+
+    with edit() as state:
+        _normalize_state(state)
+        for entry in state["socials"]:
+            if entry["id"] == social_id:
+                entry.setdefault("attachments", []).append(attachment)
+                return attachment
+
+    # social not found — clean up the orphan file
+    target_path.unlink(missing_ok=True)
+    raise ValueError(f"Social {social_id} not found")
+
+
+def remove_social_attachment(social_id: str, filename: str) -> None:
+    """Delete an attachment file and remove it from the social's attachments list."""
+    with edit() as state:
+        _normalize_state(state)
+        for entry in state["socials"]:
+            if entry["id"] == social_id:
+                kept = []
+                for att in entry.get("attachments") or []:
+                    if att["filename"] == filename:
+                        Path(att["stored_path"]).unlink(missing_ok=True)
+                    else:
+                        kept.append(att)
+                entry["attachments"] = kept
+                return
 
 
 # ----- delegations (other-school scouting) -----

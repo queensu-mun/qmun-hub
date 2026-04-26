@@ -210,8 +210,32 @@ if upcoming:
             meta_bits.append(days_to)
         if location:
             meta_bits.append(location)
-        st.markdown(
-            f"""
+
+        # First image attachment (if any) gets a small thumbnail
+        first_image = next(
+            (a for a in (s.get("attachments") or []) if (a.get("mime_type") or "").startswith("image/")),
+            None,
+        )
+        if first_image:
+            row_cols = st.columns([1, 4])
+            try:
+                row_cols[0].image(first_image["stored_path"], use_container_width=True)
+            except Exception:
+                pass
+            row_cols[1].markdown(
+                f"""
+<div class='activity-row' style='border:none; padding-left:0;'>
+  <div>
+    <div class='activity-title'>{s.get('type', 'social').title()}</div>
+    <div class='activity-meta'>{' · '.join(meta_bits)}{(' · ' + notes) if notes else ''}</div>
+  </div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
 <div class='activity-row'>
   <div>
     <div class='activity-title'>{s.get('type', 'social').title()}</div>
@@ -219,8 +243,8 @@ if upcoming:
   </div>
 </div>
 """,
-            unsafe_allow_html=True,
-        )
+                unsafe_allow_html=True,
+            )
 
 # ---------------- Recent briefs ----------------
 briefs = recent_briefs(limit=4)

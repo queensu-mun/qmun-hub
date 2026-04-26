@@ -390,10 +390,17 @@ with tabs[2]:
 # ----------------- TAB 3: Socials -----------------
 with tabs[3]:
     st.markdown("### Socials")
-    st.caption("Lineskip nights, formals, team dinners. Upcoming socials surface on the home page for everyone.")
+    st.caption("Lineskip nights, formals, team dinners. Upcoming socials surface on the home page for everyone. Attach flyers, posters, sign-up sheets per event.")
 
     socials = state_lib.list_socials()
     today = date.today().isoformat()
+
+    def _human_size(n: int) -> str:
+        for unit in ("B", "KB", "MB"):
+            if n < 1024:
+                return f"{n:.0f} {unit}"
+            n /= 1024
+        return f"{n:.1f} GB"
 
     if socials:
         for s in socials:
@@ -403,6 +410,9 @@ with tabs[3]:
                 badges = tag(s.get("type", "other"))
                 if past:
                     badges += " " + tag("past")
+                attachments = s.get("attachments") or []
+                if attachments:
+                    badges += " " + tag(f"{len(attachments)} file" + ("s" if len(attachments) != 1 else ""))
                 cols_s[0].markdown(f"**{s.get('date')}** · {s.get('location') or ''}", unsafe_allow_html=True)
                 cols_s[0].markdown(badges, unsafe_allow_html=True)
                 if s.get("notes"):
@@ -411,6 +421,64 @@ with tabs[3]:
                     cols_s[0].caption(f"Added by {s['created_by']}")
                 if cols_s[2].button("Remove", key=f"rm_social_{s['id']}"):
                     state_lib.remove_social(s["id"])
+                    st.rerun()
+
+                # Attachments view
+                if attachments:
+                    st.markdown("**Attachments**")
+                    for att in attachments:
+                        att_cols = st.columns([3, 1, 1])
+                        mime = att.get("mime_type", "")
+                        is_image = mime.startswith("image/")
+                        att_cols[0].markdown(
+                            f"`{att['filename']}` <span class='subtle'>· {_human_size(att.get('size_bytes', 0))}</span>",
+                            unsafe_allow_html=True,
+                        )
+                        if att.get("uploaded_by"):
+                            att_cols[0].caption(
+                                f"Uploaded by {att['uploaded_by']} on {(att.get('uploaded_at') or '')[:10]}"
+                            )
+                        try:
+                            file_bytes = open(att["stored_path"], "rb").read()
+                            att_cols[1].download_button(
+                                "Download",
+                                data=file_bytes,
+                                file_name=att["filename"],
+                                mime=mime,
+                                key=f"dl_{s['id']}_{att['filename']}",
+                                use_container_width=True,
+                            )
+                        except FileNotFoundError:
+                            att_cols[1].caption("file missing")
+                        if att_cols[2].button("Delete", key=f"rm_att_{s['id']}_{att['filename']}"):
+                            state_lib.remove_social_attachment(s["id"], att["filename"])
+                            st.rerun()
+                        if is_image:
+                            try:
+                                st.image(att["stored_path"], width=320)
+                            except Exception:
+                                pass
+
+                # Upload widget
+                uploaded = st.file_uploader(
+                    "Add files",
+                    type=["png", "jpg", "jpeg", "webp", "gif", "pdf"],
+                    accept_multiple_files=True,
+                    key=f"upload_{s['id']}",
+                )
+                if uploaded:
+                    for f in uploaded:
+                        try:
+                            state_lib.add_social_attachment(
+                                s["id"],
+                                filename=f.name,
+                                data=f.getvalue(),
+                                mime_type=f.type,
+                                uploaded_by=user.name,
+                            )
+                        except Exception as e:
+                            st.error(f"Upload failed for {f.name}: {e}")
+                    st.success(f"Uploaded {len(uploaded)} file(s).")
                     st.rerun()
     else:
         st.caption("No socials yet.")
@@ -432,7 +500,7 @@ with tabs[3]:
                     created_by=user.name,
                     created_at=state_lib.now_iso(),
                 ))
-                st.success("Added.")
+                st.success("Added. Open the social to attach files.")
                 st.rerun()
 
 # ----------------- TAB 4: Scouting (other delegations) -----------------
