@@ -774,6 +774,8 @@ def top_nav(user) -> None:
         ("Archive", "pages/1_Archive.py"),
         ("Chatbot", "pages/3_Chatbot.py"),
         ("Training", "pages/4_Training.py"),
+        ("Socials", "pages/7_Socials.py"),
+        ("Scouting", "pages/8_Scouting.py"),
         ("Contribute", "pages/6_Alumni_Interview.py"),
     ]
     if user.is_exec:

@@ -23,9 +23,8 @@ page_header("Director", "Run the team", "Weekly topics, conferences, assignments
 
 tabs = st.tabs([
     "Weekly Topics",
-    "Announcement",
+    "Announcement & Socials",
     "Delegates",
-    "Socials",
     "Scouting",
     "Conferences",
     "Assignments",
@@ -60,8 +59,9 @@ with tabs[0]:
                 if existing.get("set_at"):
                     st.caption(f"Set {existing['set_at'][:10]}")
 
-# ----------------- TAB 1.5: Announcement -----------------
+# ----------------- TAB 1: Announcement & Socials -----------------
 with tabs[1]:
+    # ----- Announcement -----
     st.markdown("### Pinned message for the team")
     st.caption("Shows as a banner on every delegate's home page. Keep it short.")
     current = state.get("announcement") or {}
@@ -82,6 +82,124 @@ with tabs[1]:
         st.rerun()
     if current.get("set_at"):
         st.caption(f"Currently pinned. Set {current['set_at'][:16].replace('T', ' ')} UTC.")
+
+    st.divider()
+
+    # ----- Socials editing (public read view lives at /Socials) -----
+    st.markdown("### Socials")
+    st.caption(
+        "Lineskip nights, formals, team dinners. Anyone on the team can browse these "
+        "at the Socials page. Attach flyers, posters, sign-up sheets per event."
+    )
+
+    socials = state_lib.list_socials()
+    today = date.today().isoformat()
+
+    def _human_size(n: int) -> str:
+        for unit in ("B", "KB", "MB"):
+            if n < 1024:
+                return f"{n:.0f} {unit}"
+            n /= 1024
+        return f"{n:.1f} GB"
+
+    if socials:
+        for s in socials:
+            past_event = (s.get("date") or "") < today
+            with st.container(border=True):
+                cols_s = st.columns([3, 1, 1])
+                badges = tag(s.get("type", "other"))
+                if past_event:
+                    badges += " " + tag("past")
+                attachments = s.get("attachments") or []
+                if attachments:
+                    badges += " " + tag(f"{len(attachments)} file" + ("s" if len(attachments) != 1 else ""))
+                cols_s[0].markdown(f"**{s.get('date')}** · {s.get('location') or ''}", unsafe_allow_html=True)
+                cols_s[0].markdown(badges, unsafe_allow_html=True)
+                if s.get("notes"):
+                    cols_s[0].caption(s["notes"])
+                if s.get("created_by"):
+                    cols_s[0].caption(f"Added by {s['created_by']}")
+                if cols_s[2].button("Remove", key=f"rm_social_{s['id']}"):
+                    state_lib.remove_social(s["id"])
+                    st.rerun()
+
+                if attachments:
+                    st.markdown("**Attachments**")
+                    for att in attachments:
+                        att_cols = st.columns([3, 1, 1])
+                        mime = att.get("mime_type", "")
+                        is_image = mime.startswith("image/")
+                        att_cols[0].markdown(
+                            f"`{att['filename']}` <span class='subtle'>· {_human_size(att.get('size_bytes', 0))}</span>",
+                            unsafe_allow_html=True,
+                        )
+                        if att.get("uploaded_by"):
+                            att_cols[0].caption(
+                                f"Uploaded by {att['uploaded_by']} on {(att.get('uploaded_at') or '')[:10]}"
+                            )
+                        try:
+                            file_bytes = open(att["stored_path"], "rb").read()
+                            att_cols[1].download_button(
+                                "Download",
+                                data=file_bytes,
+                                file_name=att["filename"],
+                                mime=mime,
+                                key=f"dl_{s['id']}_{att['filename']}",
+                                use_container_width=True,
+                            )
+                        except FileNotFoundError:
+                            att_cols[1].caption("file missing")
+                        if att_cols[2].button("Delete", key=f"rm_att_{s['id']}_{att['filename']}"):
+                            state_lib.remove_social_attachment(s["id"], att["filename"])
+                            st.rerun()
+                        if is_image:
+                            try:
+                                st.image(att["stored_path"], width=320)
+                            except Exception:
+                                pass
+
+                uploaded = st.file_uploader(
+                    "Add files",
+                    type=["png", "jpg", "jpeg", "webp", "gif", "pdf"],
+                    accept_multiple_files=True,
+                    key=f"upload_{s['id']}",
+                )
+                if uploaded:
+                    for f in uploaded:
+                        try:
+                            state_lib.add_social_attachment(
+                                s["id"],
+                                filename=f.name,
+                                data=f.getvalue(),
+                                mime_type=f.type,
+                                uploaded_by=user.name,
+                            )
+                        except Exception as e:
+                            st.error(f"Upload failed for {f.name}: {e}")
+                    st.success(f"Uploaded {len(uploaded)} file(s).")
+                    st.rerun()
+    else:
+        st.caption("No socials yet.")
+
+    with st.expander("Add social", expanded=not socials):
+        with st.form("add_social"):
+            cols_a = st.columns([1, 1, 2])
+            date_in = cols_a[0].date_input("Date")
+            type_in = cols_a[1].selectbox("Type", ["lineskip", "formal", "dinner", "other"])
+            location_in = cols_a[2].text_input("Location", placeholder="Stages, Donald Gordon, ...")
+            notes_in = st.text_area("Notes", height=70, placeholder="Anything the team should know.")
+            if st.form_submit_button("Add social", type="primary"):
+                state_lib.add_social(state_lib.Social(
+                    id=state_lib.new_id(),
+                    date=date_in.isoformat(),
+                    type=type_in,
+                    location=location_in.strip() or None,
+                    notes=notes_in.strip() or None,
+                    created_by=user.name,
+                    created_at=state_lib.now_iso(),
+                ))
+                st.success("Added. Expand the social to attach files.")
+                st.rerun()
 
 # ----------------- TAB 2: Delegates -----------------
 with tabs[2]:
@@ -387,127 +505,13 @@ with tabs[2]:
                         for a in areas:
                             st.markdown(f"- {a}")
 
-# ----------------- TAB 3: Socials -----------------
+# ----------------- TAB 3: Scouting (other delegations) -----------------
 with tabs[3]:
-    st.markdown("### Socials")
-    st.caption("Lineskip nights, formals, team dinners. Upcoming socials surface on the home page for everyone. Attach flyers, posters, sign-up sheets per event.")
-
-    socials = state_lib.list_socials()
-    today = date.today().isoformat()
-
-    def _human_size(n: int) -> str:
-        for unit in ("B", "KB", "MB"):
-            if n < 1024:
-                return f"{n:.0f} {unit}"
-            n /= 1024
-        return f"{n:.1f} GB"
-
-    if socials:
-        for s in socials:
-            past = (s.get("date") or "") < today
-            with st.container(border=True):
-                cols_s = st.columns([3, 1, 1])
-                badges = tag(s.get("type", "other"))
-                if past:
-                    badges += " " + tag("past")
-                attachments = s.get("attachments") or []
-                if attachments:
-                    badges += " " + tag(f"{len(attachments)} file" + ("s" if len(attachments) != 1 else ""))
-                cols_s[0].markdown(f"**{s.get('date')}** · {s.get('location') or ''}", unsafe_allow_html=True)
-                cols_s[0].markdown(badges, unsafe_allow_html=True)
-                if s.get("notes"):
-                    cols_s[0].caption(s["notes"])
-                if s.get("created_by"):
-                    cols_s[0].caption(f"Added by {s['created_by']}")
-                if cols_s[2].button("Remove", key=f"rm_social_{s['id']}"):
-                    state_lib.remove_social(s["id"])
-                    st.rerun()
-
-                # Attachments view
-                if attachments:
-                    st.markdown("**Attachments**")
-                    for att in attachments:
-                        att_cols = st.columns([3, 1, 1])
-                        mime = att.get("mime_type", "")
-                        is_image = mime.startswith("image/")
-                        att_cols[0].markdown(
-                            f"`{att['filename']}` <span class='subtle'>· {_human_size(att.get('size_bytes', 0))}</span>",
-                            unsafe_allow_html=True,
-                        )
-                        if att.get("uploaded_by"):
-                            att_cols[0].caption(
-                                f"Uploaded by {att['uploaded_by']} on {(att.get('uploaded_at') or '')[:10]}"
-                            )
-                        try:
-                            file_bytes = open(att["stored_path"], "rb").read()
-                            att_cols[1].download_button(
-                                "Download",
-                                data=file_bytes,
-                                file_name=att["filename"],
-                                mime=mime,
-                                key=f"dl_{s['id']}_{att['filename']}",
-                                use_container_width=True,
-                            )
-                        except FileNotFoundError:
-                            att_cols[1].caption("file missing")
-                        if att_cols[2].button("Delete", key=f"rm_att_{s['id']}_{att['filename']}"):
-                            state_lib.remove_social_attachment(s["id"], att["filename"])
-                            st.rerun()
-                        if is_image:
-                            try:
-                                st.image(att["stored_path"], width=320)
-                            except Exception:
-                                pass
-
-                # Upload widget
-                uploaded = st.file_uploader(
-                    "Add files",
-                    type=["png", "jpg", "jpeg", "webp", "gif", "pdf"],
-                    accept_multiple_files=True,
-                    key=f"upload_{s['id']}",
-                )
-                if uploaded:
-                    for f in uploaded:
-                        try:
-                            state_lib.add_social_attachment(
-                                s["id"],
-                                filename=f.name,
-                                data=f.getvalue(),
-                                mime_type=f.type,
-                                uploaded_by=user.name,
-                            )
-                        except Exception as e:
-                            st.error(f"Upload failed for {f.name}: {e}")
-                    st.success(f"Uploaded {len(uploaded)} file(s).")
-                    st.rerun()
-    else:
-        st.caption("No socials yet.")
-
-    with st.expander("Add social", expanded=not socials):
-        with st.form("add_social"):
-            cols_a = st.columns([1, 1, 2])
-            date_in = cols_a[0].date_input("Date")
-            type_in = cols_a[1].selectbox("Type", ["lineskip", "formal", "dinner", "other"])
-            location_in = cols_a[2].text_input("Location", placeholder="Stages, Donald Gordon, ...")
-            notes_in = st.text_area("Notes", height=70, placeholder="Anything the team should know.")
-            if st.form_submit_button("Add social", type="primary"):
-                state_lib.add_social(state_lib.Social(
-                    id=state_lib.new_id(),
-                    date=date_in.isoformat(),
-                    type=type_in,
-                    location=location_in.strip() or None,
-                    notes=notes_in.strip() or None,
-                    created_by=user.name,
-                    created_at=state_lib.now_iso(),
-                ))
-                st.success("Added. Open the social to attach files.")
-                st.rerun()
-
-# ----------------- TAB 4: Scouting (other delegations) -----------------
-with tabs[4]:
     st.markdown("### Scouting: other delegations")
     st.caption(
-        "Information bank on other schools' MUN teams: how they fight, who their stars are, where to expect them."
+        "Information bank on other schools' MUN teams: how they fight, who their stars are, where to expect them. "
+        "The team-facing read view lives at the Scouting page. Long-term, alumni interview responses will populate "
+        "this database automatically; for now, add manual entries here."
     )
 
     delegations = state_lib.list_delegations()
@@ -632,8 +636,8 @@ with tabs[4]:
                 else:
                     st.error("School name required.")
 
-# ----------------- TAB 5: Conferences -----------------
-with tabs[5]:
+# ----------------- TAB 4: Conferences -----------------
+with tabs[4]:
     st.markdown("### Conferences")
     confs = state.get("conferences", [])
     if confs:
@@ -681,8 +685,8 @@ with tabs[5]:
                 else:
                     st.error("Name and location required.")
 
-# ----------------- TAB 6: Assignments -----------------
-with tabs[6]:
+# ----------------- TAB 5: Assignments -----------------
+with tabs[5]:
     st.markdown("### Delegate assignments")
     confs = state.get("conferences", [])
     assignments = state.get("assignments", [])
@@ -735,8 +739,8 @@ with tabs[6]:
                     else:
                         st.error("Delegate, committee, and country required.")
 
-# ----------------- TAB 7: Curation -----------------
-with tabs[7]:
+# ----------------- TAB 6: Curation -----------------
+with tabs[6]:
     st.markdown("### Archive curation")
     st.caption("Mark documents as exemplary (boost in retrieval), outdated (deprioritize), or exec-only (hide from delegates).")
 
@@ -784,8 +788,8 @@ with tabs[7]:
                     st.success("Deleted.")
                     st.rerun()
 
-# ----------------- TAB 8: Cost Dashboard -----------------
-with tabs[8]:
+# ----------------- TAB 7: Cost Dashboard -----------------
+with tabs[7]:
     st.markdown("### This month")
     monthly = current_monthly()
     cols = st.columns(4)
@@ -820,8 +824,8 @@ with tabs[8]:
     else:
         st.caption("No usage yet this month.")
 
-# ----------------- TAB 9: Alumni Outreach -----------------
-with tabs[9]:
+# ----------------- TAB 8: Alumni Outreach -----------------
+with tabs[8]:
     st.markdown("### Alumni interview campaign")
     st.markdown(
         "Send the structured interview to graduating seniors and alumni. "
