@@ -47,13 +47,27 @@ if announcement and announcement.get("text"):
     )
 
 # ---------------- Hero ----------------
-if HERO_PHOTO.exists():
-    # Two-column layout when a real photo is present
-    hero_left, hero_right = st.columns([1.2, 1], gap="large")
-    with hero_right:
+hero_left, hero_right = st.columns([1.2, 1], gap="large")
+
+with hero_right:
+    if HERO_PHOTO.exists():
         st.image(str(HERO_PHOTO), use_container_width=True)
-else:
-    hero_left = st.container()
+    else:
+        st.markdown(
+            """
+<div class='hero-panel'>
+  <div class='hero-panel-mark'>QM</div>
+  <div class='hero-panel-title'>Queen's<br/>Model UN</div>
+  <div class='hero-panel-meta'>2026 / 2027 · Team Workspace</div>
+  <div class='hero-panel-tricolor'>
+    <div style='background:#9D1939;'></div>
+    <div style='background:#B89D5E;'></div>
+    <div style='background:#4B7BBF;'></div>
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 
 with hero_left:
     st.markdown(f"<div class='hero-display'>{first_name}.</div>", unsafe_allow_html=True)

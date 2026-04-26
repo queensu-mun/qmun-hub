@@ -457,6 +457,58 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     text-transform: uppercase;
 }
 
+/* Hero panel (placeholder when no hero.jpg) */
+.hero-panel {
+    position: relative;
+    height: 240px;
+    border-radius: 14px;
+    background:
+        radial-gradient(ellipse 70% 60% at 100% 0%, rgba(157, 25, 57, 0.18), transparent 70%),
+        radial-gradient(ellipse 60% 60% at 0% 100%, rgba(75, 123, 191, 0.12), transparent 70%),
+        linear-gradient(135deg, #0E1A2C, #07101D);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    padding: 1.75rem 1.75rem 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.hero-panel-mark {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--text);
+    opacity: 0.9;
+}
+.hero-panel-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-top: -3rem;
+    text-align: right;
+}
+.hero-panel-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    text-align: right;
+    margin-bottom: 1rem;
+}
+.hero-panel-tricolor {
+    display: flex;
+    height: 4px;
+    margin: 0 -1.75rem;
+    margin-top: auto;
+}
+.hero-panel-tricolor > div { flex: 1; }
+
 /* Announcement banner */
 .qmun-announce {
     display: flex;
