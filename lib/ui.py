@@ -64,9 +64,9 @@ h1, h2, h3, h4, h5 {
     letter-spacing: -0.025em;
     color: var(--text);
 }
-h1 { font-size: 2.75rem; line-height: 1.05; margin-bottom: 0.5rem; font-weight: 700; }
-h2 { font-size: 1.6rem; line-height: 1.2; margin-top: 2.5rem; font-weight: 600; }
-h3 { font-size: 1.15rem; line-height: 1.3; margin-top: 1.5rem; font-weight: 600; letter-spacing: -0.015em; }
+h1 { font-size: 2.1rem; line-height: 1.1; margin-bottom: 0.4rem; font-weight: 700; }
+h2 { font-size: 1.35rem; line-height: 1.25; margin-top: 2rem; font-weight: 600; }
+h3 { font-size: 1.05rem; line-height: 1.3; margin-top: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
 
 p, li {
     font-size: 0.95rem;
@@ -301,11 +301,11 @@ hr, div[data-testid="stMarkdownContainer"] hr {
 
 .lede {
     color: var(--text-muted);
-    font-size: 1.1rem;
+    font-size: 1rem;
     line-height: 1.55;
-    max-width: 640px;
-    margin-top: 0.75rem;
-    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
     font-weight: 400;
 }
 
@@ -313,10 +313,10 @@ hr, div[data-testid="stMarkdownContainer"] hr {
 
 .hero-display {
     font-family: 'Inter Tight', sans-serif;
-    font-weight: 800;
-    font-size: 3.5rem;
-    line-height: 1;
-    letter-spacing: -0.035em;
+    font-weight: 700;
+    font-size: 2.6rem;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     color: var(--text);
     margin: 0;
 }
@@ -457,6 +457,90 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     text-transform: uppercase;
 }
 
+/* Announcement banner */
+.qmun-announce {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.85rem 1.1rem;
+    background: linear-gradient(90deg, var(--accent-soft), rgba(75, 123, 191, 0.06));
+    border: 1px solid rgba(157, 25, 57, 0.3);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+    font-size: 0.92rem;
+}
+.qmun-announce-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.qmun-announce-label {
+    color: var(--accent);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+
+/* Hero photo treatment */
+.hero-photo-wrap {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 280px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+.hero-photo {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    filter: brightness(0.65) saturate(1.1);
+}
+.hero-photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(6, 14, 26, 0.4) 0%, rgba(6, 14, 26, 0) 50%, rgba(6, 14, 26, 0.7) 100%);
+    pointer-events: none;
+}
+
+/* Prep status card */
+.prep-card {
+    padding: 1.1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    border-left: 3px solid var(--accent);
+}
+.prep-card.gold { border-left-color: var(--gold); }
+.prep-card.blue { border-left-color: var(--blue); }
+.prep-conf {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+.prep-role {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+}
+.prep-when {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+.prep-checks { display: flex; gap: 1rem; font-size: 0.78rem; color: var(--text-muted); }
+.prep-checks .done { color: var(--gold); }
+.prep-checks .pending { color: var(--text-faint); }
+
 .stat-line {
     display: flex;
     gap: 2.5rem;
@@ -514,8 +598,8 @@ def inject_global_css() -> None:
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 
-def page_header(eyebrow: str, title: str, lede: str | None = None) -> None:
-    st.markdown(f"<div class='eyebrow'>{eyebrow}</div>", unsafe_allow_html=True)
+def page_header(_eyebrow_unused: str, title: str, lede: str | None = None) -> None:
+    """Eyebrow argument retained for backward compat but no longer rendered."""
     st.markdown(f"<h1>{title}</h1>", unsafe_allow_html=True)
     if lede:
         st.markdown(f"<div class='lede'>{lede}</div>", unsafe_allow_html=True)

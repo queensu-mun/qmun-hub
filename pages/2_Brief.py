@@ -13,39 +13,43 @@ inject_global_css()
 user = require_login()
 top_nav(user)
 
-page_header("Brief", "A starting point on any country", "Built around the team's three-question framework. Mock or full conference depth.")
+page_header("Brief", "A starting point on any country", "Built around the team's three-question framework.")
 
-with st.container(border=True):
-    cols = st.columns([1, 1, 1])
-    with cols[0]:
-        country = st.text_input("Country or character", placeholder="Brazil, Henry Kissinger...")
-    with cols[1]:
-        committee = st.text_input("Committee", placeholder="ECOSOC, UNSC, JCC: WW2 Allies...")
-    with cols[2]:
-        depth_label = st.radio(
-            "Depth",
-            ["Mock (one page)", "Conference (full)"],
-            horizontal=False,
-            help="Mock takes ~10s, conference takes ~60s and pulls more detail.",
-        )
-        depth = "mock" if depth_label.startswith("Mock") else "conference"
+# Compact form: country + committee + depth on one row, topic below, notes optional
+seeded_topic = st.session_state.pop("brief_seed_topic", "")
 
-    topic = st.text_area(
-        "Topic",
-        placeholder="Sustainable financing for climate adaptation in SIDS",
-        height=80,
+cols = st.columns([2, 2, 1.4])
+with cols[0]:
+    country = st.text_input("Country or character", placeholder="Brazil, Henry Kissinger...")
+with cols[1]:
+    committee = st.text_input("Committee", placeholder="ECOSOC, UNSC, JCC: WW2 Allies...")
+with cols[2]:
+    depth_label = st.selectbox(
+        "Depth",
+        ["Mock (one page)", "Conference (full)"],
+        help="Mock takes ~10s; conference takes ~60s and pulls more detail.",
     )
+    depth = "mock" if depth_label.startswith("Mock") else "conference"
+
+topic = st.text_input(
+    "Topic",
+    value=seeded_topic,
+    placeholder="Sustainable financing for climate adaptation in SIDS",
+)
+
+with st.expander("Add framing notes (optional)"):
     notes = st.text_area(
-        "Anything else worth knowing? (optional)",
+        "Notes",
         placeholder="Conference, scenario, your strategy, what you're stuck on.",
-        height=68,
+        height=80,
+        label_visibility="collapsed",
     )
 
-    btn_cols = st.columns([1, 1, 4])
-    with btn_cols[0]:
-        generate_btn = st.button("Generate brief", type="primary", use_container_width=True)
-    with btn_cols[1]:
-        clear_btn = st.button("Clear", use_container_width=True)
+btn_cols = st.columns([1, 1, 5])
+with btn_cols[0]:
+    generate_btn = st.button("Generate brief", type="primary", use_container_width=True)
+with btn_cols[1]:
+    clear_btn = st.button("Clear", use_container_width=True)
 
 if clear_btn:
     st.session_state.pop("last_brief", None)

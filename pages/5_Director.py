@@ -23,6 +23,7 @@ page_header("Director", "Run the team", "Weekly topics, conferences, assignments
 
 tabs = st.tabs([
     "Weekly Topics",
+    "Announcement",
     "Conferences",
     "Assignments",
     "Curation",
@@ -56,8 +57,31 @@ with tabs[0]:
                 if existing.get("set_at"):
                     st.caption(f"Set {existing['set_at'][:10]}")
 
-# ----------------- TAB 2: Conferences -----------------
+# ----------------- TAB 1.5: Announcement -----------------
 with tabs[1]:
+    st.markdown("### Pinned message for the team")
+    st.caption("Shows as a banner on every delegate's home page. Keep it short.")
+    current = state.get("announcement") or {}
+    text = st.text_area(
+        "Message",
+        value=current.get("text", ""),
+        placeholder="e.g. Sign-ups for HMUN close Friday at 5pm.",
+        height=80,
+    )
+    cols_ann = st.columns([1, 1, 4])
+    if cols_ann[0].button("Pin announcement", type="primary"):
+        state_lib.set_announcement(text)
+        st.success("Pinned.")
+        st.rerun()
+    if cols_ann[1].button("Clear"):
+        state_lib.set_announcement(None)
+        st.success("Cleared.")
+        st.rerun()
+    if current.get("set_at"):
+        st.caption(f"Currently pinned. Set {current['set_at'][:16].replace('T', ' ')} UTC.")
+
+# ----------------- TAB 2: Conferences -----------------
+with tabs[2]:
     st.markdown("### Upcoming and recent conferences")
     confs = state.get("conferences", [])
     if confs:
@@ -94,7 +118,7 @@ with tabs[1]:
                     st.error("Name and location required.")
 
 # ----------------- TAB 3: Assignments -----------------
-with tabs[2]:
+with tabs[3]:
     st.markdown("### Delegate assignments")
     confs = state.get("conferences", [])
     assignments = state.get("assignments", [])
@@ -139,7 +163,7 @@ with tabs[2]:
                         st.error("Delegate, committee, and country required.")
 
 # ----------------- TAB 4: Curation -----------------
-with tabs[3]:
+with tabs[4]:
     st.markdown("### Archive curation")
     st.caption("Mark documents as exemplary (boost in retrieval), outdated (deprioritize), or exec-only (hide from delegates).")
 
@@ -188,7 +212,7 @@ with tabs[3]:
                     st.rerun()
 
 # ----------------- TAB 5: Cost Dashboard -----------------
-with tabs[4]:
+with tabs[5]:
     st.markdown("### This month")
     monthly = current_monthly()
     cols = st.columns(4)
@@ -213,7 +237,7 @@ with tabs[4]:
         st.caption("No usage yet this month.")
 
 # ----------------- TAB 6: Alumni Outreach -----------------
-with tabs[5]:
+with tabs[6]:
     st.markdown("### Alumni interview campaign")
     st.markdown(
         "Send the structured interview to graduating seniors and alumni. "

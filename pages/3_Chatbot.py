@@ -109,6 +109,9 @@ with chat_col:
             st.markdown(msg["content"])
 
     prompt = st.chat_input("Type a message..." if selected != ChatMode.CRISIS_BACKROOM else "Send a crisis note...")
+    seeded_prompt = st.session_state.pop("mentor_seed_question", None)
+    if seeded_prompt and not prompt:
+        prompt = seeded_prompt
     if prompt:
         feature = FEATURE_KEYS[selected]
         ok, msg = check_user_quota(user.slack_id, feature)

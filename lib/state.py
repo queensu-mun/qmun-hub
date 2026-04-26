@@ -50,6 +50,7 @@ def _default_state() -> dict:
         "conferences": [],
         "assignments": [],
         "roster": [],
+        "announcement": None,
         "settings": {
             "budget_warn_usd": 35.0,
             "budget_cap_usd": 40.0,
@@ -58,6 +59,32 @@ def _default_state() -> dict:
             "delegate_crisis_interactions_per_week": 5,
         },
     }
+
+
+def set_announcement(text: str | None) -> None:
+    from datetime import datetime
+    with edit() as s:
+        s["announcement"] = (
+            {"text": text, "set_at": datetime.utcnow().isoformat()}
+            if text and text.strip()
+            else None
+        )
+
+
+def assignments_for_delegate(delegate_name: str) -> list[dict]:
+    """Loose name match — case-insensitive, ignoring extra whitespace."""
+    if not delegate_name:
+        return []
+    target = delegate_name.strip().lower()
+    out = []
+    s = load()
+    confs_by_id = {c["id"]: c for c in s.get("conferences", [])}
+    for a in s.get("assignments", []):
+        if a["delegate_name"].strip().lower() == target:
+            a_with_conf = dict(a)
+            a_with_conf["conference"] = confs_by_id.get(a["conference_id"])
+            out.append(a_with_conf)
+    return out
 
 
 def load() -> dict:

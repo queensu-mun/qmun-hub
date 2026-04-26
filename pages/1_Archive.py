@@ -36,8 +36,10 @@ if stats["n_docs"] == 0:
 with st.container(border=True):
     cols = st.columns([3, 1, 1, 1])
     with cols[0]:
+        seeded_query = st.session_state.pop("archive_seed_query", "")
         query = st.text_input(
             "Search",
+            value=seeded_query,
             placeholder="e.g. crisis directives, China climate policy, prisoners rights, Khmer Rouge...",
             label_visibility="collapsed",
         )
@@ -50,6 +52,8 @@ with st.container(border=True):
         year_choice = st.selectbox("Year", ["All years"] + years, label_visibility="collapsed")
     with cols[3]:
         submitted = st.button("Search", type="primary", use_container_width=True)
+    if seeded_query:
+        submitted = True  # auto-search when arriving from home command bar
 
 st.markdown("<br/>", unsafe_allow_html=True)
 
