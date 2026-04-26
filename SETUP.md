@@ -27,9 +27,10 @@ What you need to run QMUN Hub locally and what's blocking each phase.
 
 ```bash
 cd ~/qmun-hub
-source .venv/bin/activate
-streamlit run app.py
+./scripts/run.sh
 ```
+
+The launcher activates the venv and forces `arch -arm64` because the venv's Python is a universal binary symlinked to the macOS system Python. Without the arm64 prefix, some shells (Rosetta'd Terminal, certain VS Code configs) launch Python under x86_64 and crash with an `ImportError` on `pydantic_core` (arm64 wheel can't load under x86_64 Python).
 
 Sign in with the dev form (any name + Slack ID). Use `U_JACK_DEV` as the Slack ID to get exec access (sees Director page + Crisis/Chair chatbot modes).
 
