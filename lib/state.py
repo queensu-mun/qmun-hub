@@ -148,7 +148,7 @@ def set_announcement(text: str | None) -> None:
 
 
 def assignments_for_delegate(delegate_name: str) -> list[dict]:
-    """Loose name match — case-insensitive, ignoring extra whitespace."""
+    """Loose name match: case-insensitive, ignoring extra whitespace."""
     if not delegate_name:
         return []
     target = delegate_name.strip().lower()
@@ -259,7 +259,7 @@ def update_director_notes(delegate_id: str, notes: str, by: str | None = None) -
 
 
 def roster_lookup(name: str) -> dict | None:
-    """Loose name match — case-insensitive, ignoring extra whitespace."""
+    """Loose name match: case-insensitive, ignoring extra whitespace."""
     if not name:
         return None
     target = name.strip().lower()
@@ -380,7 +380,7 @@ def add_social_attachment(
 
     target_path = target_dir / safe
     if target_path.exists():
-        # don't overwrite — suffix with a counter
+        # don't overwrite, suffix with a counter
         stem = target_path.stem
         ext = target_path.suffix
         n = 1
@@ -406,7 +406,7 @@ def add_social_attachment(
                 entry.setdefault("attachments", []).append(attachment)
                 return attachment
 
-    # social not found — clean up the orphan file
+    # social not found, clean up the orphan file
     target_path.unlink(missing_ok=True)
     raise ValueError(f"Social {social_id} not found")
 

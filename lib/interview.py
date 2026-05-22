@@ -1,6 +1,18 @@
-"""Alumni interview module — operationalizes Jack's MUN Claude template.
+"""Alumni interview module: operationalizes the team's MUN Claude template.
 
-Stub for May scaffolding. Full implementation in Phase 3 (July).
+Each section's responses get composed into a markdown document and indexed
+into the archive (`alumni_interview` doc type). The Mentor chatbot cites
+these by name; Archive search returns them on relevant queries.
+
+Design principles for the questions:
+- Force specifics. "What's a moment when..." beats "Describe the team."
+- Reward anecdotes. Story-shaped answers retrieve better and the chatbot
+  can cite them by name.
+- Skippable by experience. GA-only and Crisis-only sections so any one
+  alum doesn't see questions outside their experience.
+- ~20 minutes total if written substantively. Bullet-point answers fine.
+
+Stub for May scaffolding. Full submit() implementation in Phase 3 (July).
 """
 from __future__ import annotations
 
@@ -8,67 +20,90 @@ from dataclasses import dataclass
 
 INTERVIEW_SECTIONS = [
     {
-        "id": "team_culture",
-        "title": "Queen's Team Culture & Preparation",
+        "id": "context",
+        "title": "Quick context",
         "questions": [
-            "How does the team prepare before a conference? What's the timeline?",
-            "How do you divide research responsibilities within a delegation?",
-            "Do you do practice sessions or mock debates? What do those look like?",
-            "What does a first-timer need to know that the handbook doesn't cover? Unwritten rules, social dynamics, what to pack, what to expect emotionally.",
-            "What's the team's general philosophy — aggressive vs. collaborative, awards-focused vs. experience-focused? Has it shifted over time?",
-            "How do you assign delegates to committees? What makes someone a good fit for crisis vs. GA vs. specialized?",
-            "What's the team dynamic during a conference? Do you debrief between sessions? Help each other?",
+            "How many years were you on the team, and what roles did you hold? "
+            "(e.g. delegate, exec, director, social chair)",
+            "Which committee types did you do most? (GA, Specialized Agency, Crisis, UNSC, mix)",
+            "Which conferences did you attend, and any awards or honors picked up? "
+            "(e.g. \"NCSC LIII fall 2025, UNSC Cambodia, Verbal Commendation\")",
         ],
     },
     {
-        "id": "conference_intel",
-        "title": "Conference-Specific Intel",
+        "id": "sticky_note",
+        "title": "The sticky-note advice",
         "questions": [
-            "What surprised you about this conference?",
-            "What did chairs actually reward? (procedural skill? substance? collaboration? flashiness?)",
-            "What strategies worked? What flopped?",
-            "Specific anecdotes — bloc that fell apart, crisis note that changed the game, merge negotiation, speech that landed or bombed.",
-            "How did judging actually work vs. what they claimed?",
-            "What's the vibe? How does the room feel compared to other conferences?",
-            "How big were the committees? How experienced were other delegates?",
-            "Anything specific about venue, logistics, scheduling that affected performance?",
+            "If you could give a Queen's MUN delegate ONE piece of advice "
+            "and it had to fit on a sticky note, what would it be, and why? "
+            "Be specific. Generic advice is useless to a first-timer.",
         ],
-        "per_conference": True,
     },
     {
         "id": "tactical",
-        "title": "Tactical Wisdom",
+        "title": "Tactical wisdom",
         "questions": [
-            "What mistakes do Queen's delegates keep making year after year?",
-            "What's overrated in MUN?",
-            "What's underrated?",
-            "Best position papers you've seen — what made them stand out?",
-            "Worst position papers — what tanked them?",
-            "Crisis notes: what kind get results vs. what staff ignore?",
-            "Unmod tactics: how do you actually approach strangers, form blocs, handle a poach?",
-            "How do you handle a committee where you're outmatched?",
-            "How do you handle a committee where chairs are bad or disorganized?",
-            "What do you wish someone had told you before your first conference?",
+            "What's the single most useful thing you do in committee that you didn't "
+            "learn from the Art of MUN handbook? Where did you pick it up?",
+            "Tell us about a specific moment when your committee strategy fell apart "
+            "and how you recovered. What was the trigger, what did you change, what happened?",
+            "What do Queen's delegates collectively keep getting wrong, year after year? "
+            "Be honest. This is the most valuable thing you can give us, because it "
+            "tells us what to drill in training.",
         ],
     },
     {
-        "id": "working_papers",
-        "title": "Working Papers & Resolutions",
+        "id": "first_timer",
+        "title": "For first-timers (this becomes Mentor chatbot context)",
         "questions": [
-            "Walk me through how a working paper actually gets written in committee. Who starts it? How do you divide clauses? What tools (laptop, paper, Google Docs)?",
-            "What makes a working paper merge succeed vs. fail?",
-            "Have you seen creative or unusual operative clauses that impressed chairs?",
-            "What's the difference between a working paper that wins awards and one that just passes?",
+            "What would you tell yourself the night before your very first conference? "
+            "Tactical, social, emotional, whatever you wish someone had told you.",
+            "Name one concrete habit a first-timer can adopt in their very first "
+            "session that pays off for the entire weekend. What does it look like in practice?",
+            "Best piece of advice you ever got from someone senior on the team, "
+            "and (if you remember) who gave it to you?",
         ],
     },
     {
-        "id": "position_papers",
-        "title": "Position Papers Specifically",
+        "id": "ga",
+        "title": "GA / SA delegates only (skip if mostly crisis)",
         "questions": [
-            "Do you write them the night before or weeks in advance? What's realistic?",
-            "How much do position papers actually matter for awards at the conferences you've attended?",
-            "What feedback have you gotten from chairs on your papers?",
-            "Do you have a research process? Specific sources you always check?",
+            "Tell us about a specific moment where bloc dynamics decided the outcome. "
+            "Who was in the room, what was the play, how did it land?",
+            "What separates a working paper that wins awards from one that just passes? "
+            "Concrete clauses, sponsor lists, merge moves, whatever you've actually seen work.",
+        ],
+    },
+    {
+        "id": "crisis",
+        "title": "Crisis delegates only (skip if mostly GA)",
+        "questions": [
+            "Walk us through a personal arc that actually worked. What was your character's "
+            "goal, what moves did you make, what did the backroom give back, how did it end?",
+            "What separates a great crisis directive from a forgettable one? "
+            "Give a specific example of each if you can.",
+            "What does Queen's do well in crisis, and what do we consistently miss? "
+            "(We have no backroom staff and can't run crisis mocks. This question fills that gap.)",
+        ],
+    },
+    {
+        "id": "conferences",
+        "title": "Conference-specific intel",
+        "questions": [
+            "For each major conference you attended, give us a short paragraph on: "
+            "the vibe, what chairs actually reward, awards politics, and anything "
+            "quirky about how it runs. Two or three sentences per conference is plenty. "
+            "This is the intel future delegates can't get anywhere else.",
+        ],
+    },
+    {
+        "id": "open",
+        "title": "Anything else",
+        "questions": [
+            "What didn't we ask that we should have? What knowledge are you taking with "
+            "you that future Queen's MUN should keep? Be candid.",
+            "Anyone we should interview after you? (Names of teammates whose brain "
+            "we'd be silly to lose.)",
         ],
     },
 ]
@@ -83,4 +118,4 @@ class InterviewResponse:
 
 
 def submit(response: InterviewResponse) -> str:
-    raise NotImplementedError("Phase 3 — auto-indexes into archive")
+    raise NotImplementedError("Phase 3: auto-indexes into archive")

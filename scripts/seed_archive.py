@@ -58,7 +58,7 @@ SOURCES = [
     },
     {
         "doc_id": "seed_mun_claude_self_interview",
-        "title": "MUN Claude — Jack's self-interview (institutional knowledge intake)",
+        "title": "MUN Claude · Jack's self-interview (institutional knowledge intake)",
         "doc_type": "alumni_interview",
         "year": 2026,
         "path": SEED / "mun_claude_self_interview.md",
@@ -80,7 +80,7 @@ SOURCES = [
     },
     {
         "doc_id": "seed_global_commission_prisoners_bg",
-        "title": "Global Commission on the Rights of Prisoners — Background Guide",
+        "title": "Global Commission on the Rights of Prisoners · Background Guide",
         "doc_type": "background_guide",
         "year": 2022,
         "path": SEED / "global_commission_prisoners_rights_bg.pdf",
@@ -89,7 +89,7 @@ SOURCES = [
     },
     {
         "doc_id": "seed_sdg4_sochum_bg",
-        "title": "SDG 4 — Quality Education (SOCHUM) Background Guide",
+        "title": "SDG 4 · Quality Education (SOCHUM) Background Guide",
         "doc_type": "background_guide",
         "year": 2019,
         "path": SEED / "SDG4_quality_education_SOCHUM.pdf",

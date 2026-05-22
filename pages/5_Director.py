@@ -320,7 +320,7 @@ with tabs[2]:
                     delegate_pick = cols_fb1[0].selectbox("Delegate", roster_names + ["(other / not on roster)"])
                 else:
                     delegate_pick = "(other / not on roster)"
-                    cols_fb1[0].caption("No roster yet — type a name below.")
+                    cols_fb1[0].caption("No roster yet. Type a name below.")
                 source_in = cols_fb1[1].selectbox("Source", ["mock", "conference", "training", "other"])
                 conf_options = [None] + [c["id"] for c in confs]
                 conf_pick = cols_fb1[2].selectbox(

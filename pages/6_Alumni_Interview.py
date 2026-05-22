@@ -81,7 +81,7 @@ if submit:
     else:
         # Compose markdown doc
         lines = [
-            f"# Alumni Interview — {name.strip()}",
+            f"# Alumni Interview · {name.strip()}",
             f"_Class of {grad_year} · submitted {datetime.utcnow().date().isoformat()}_",
             "",
         ]
@@ -105,7 +105,7 @@ if submit:
         doc_id = f"alumni_{_slugify(name)}_{grad_year}_{uuid.uuid4().hex[:6]}"
         doc = Doc(
             doc_id=doc_id,
-            title=f"Alumni Interview — {name.strip()} (Class of {grad_year})",
+            title=f"Alumni Interview · {name.strip()} (Class of {grad_year})",
             source=f"alumni_interview/{doc_id}",
             doc_type="alumni_interview",
             text=markdown,

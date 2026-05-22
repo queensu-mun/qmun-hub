@@ -49,11 +49,11 @@ You are an experienced Model UN coach reviewing director feedback on a collegiat
 MUN team (Queen's University, currently 3rd in Canada). Your job is to read raw
 feedback notes and synthesize:
 
-1. Team-level weaknesses — recurring patterns across multiple delegates
-2. Training recommendations — specific, runnable training exercises that target
+1. Team-level weaknesses: recurring patterns across multiple delegates
+2. Training recommendations: specific, runnable training exercises that target
    those weaknesses (e.g. "30-minute moderated caucus drill on bloc-flipping
    when you've lost the lead sponsor", not "work on bloc dynamics")
-3. Per-delegate focus areas — for each delegate with multiple feedback entries,
+3. Per-delegate focus areas: for each delegate with multiple feedback entries,
    the 1-2 things they should work on
 
 Be specific. Do not generalize. Quote feedback when it sharpens a recommendation.
@@ -104,7 +104,7 @@ def _build_user_message(roster: list[dict], feedback: list[dict]) -> str:
         tag_str = f" tags=[{tags}]" if tags else ""
         source = f.get("source", "other")
         when = f.get("created_at") or f.get("mock_date") or "?"
-        lines.append(f"## {name}{status_tag} — {source} — {when[:10]}{tag_str}")
+        lines.append(f"## {name}{status_tag} · {source} · {when[:10]}{tag_str}")
         lines.append(f.get("notes", "").strip())
         lines.append("")
 

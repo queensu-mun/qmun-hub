@@ -29,7 +29,7 @@ tabs = st.tabs([
 with tabs[0]:
     sub = st.radio(
         "Reference",
-        ["Parliamentary procedure", "Awards rubric"],
+        ["Parliamentary procedure", "Awards rubric", "Voting blocs"],
         horizontal=True,
         label_visibility="collapsed",
         key="training_quick_ref_select",
@@ -42,12 +42,47 @@ with tabs[0]:
             st.markdown(path.read_text())
         else:
             st.warning("parli_pro_cheatsheet.md missing.")
-    else:
+    elif sub == "Awards rubric":
         path = SEED / "awards_rubric.md"
         if path.exists():
             st.markdown(path.read_text())
         else:
             st.warning("awards_rubric.md missing.")
+    else:
+        st.markdown("""
+## Voting blocs cheatsheet
+
+Most committees split along recognizable lines. Knowing which bloc you'd naturally fall into and which you can peel off saves hours of guesswork in unmod.
+
+### P5 (Permanent UNSC members)
+**United States, United Kingdom, France, Russia, China.** They drive the agenda by default. In UNSC, they have veto power; in GA, they're treated as informal anchors. The US-UK-France triangle usually aligns; Russia and China usually align separately. On most economic and development issues, China drifts toward the G77 bloc; on security, it sticks closer to Russia.
+
+### G77 + China
+**~134 developing countries, plus China as an associate.** The strongest bloc by sheer numbers in GA. Themes: development financing, North-South tech transfer, sovereignty over natural resources, climate justice as a development issue. The bloc's position is usually negotiated in advance through the G77 chair (rotating). If you're a developing country, this is your default home base.
+
+### EU
+**27 member states, vote together on most foreign policy.** Coordinated through EU statements before major votes. Strong on human rights, climate, multilateralism, rule of law. Almost always opposes Russian and Chinese positions in security debates. Easy to spot in committee because they sit together literally and figuratively.
+
+### NAM (Non-Aligned Movement)
+**~120 countries, mostly overlapping with G77 but with the addition of Cuba, Iran, Venezuela.** Themes: anti-imperialism, Palestinian solidarity, opposition to unilateral coercive measures, sovereignty. More politically vocal than G77, less economically focused.
+
+### Arab Group + OIC
+**Arab Group: 22 states. OIC (Organisation of Islamic Cooperation): 57 states.** Vote together on Israel/Palestine consistently. OIC also coordinates on issues like minority rights of Muslims abroad, Kashmir, defamation of religion. If your country is in either group, expect the bloc to coordinate before key votes.
+
+### African Group
+**54 states, often coordinate on Africa-specific issues** (peacekeeping, AU/UN cooperation, Sahel, regional conflict). Internally diverse, with North African states often coordinating separately with the Arab Group.
+
+### Western Group + JUSCANZ
+**JUSCANZ: Japan, US, Canada, Australia, NZ, plus Western Europe.** Liberal democratic posture on human rights, free trade, accountability. Often the bloc that has to compromise hardest at end of debate to get resolutions to pass: they bring leverage but not numbers.
+
+### CARICOM, ASEAN, GRULAC, EEG
+Smaller regional groupings that coordinate on regional issues. Worth knowing if you're representing a country inside one. **GRULAC** (Latin America + Caribbean) and **EEG** (Eastern European Group) are the two GA regional groups used for council seat allocation.
+
+### How to use this in committee
+- **Identify your home bloc within the first 20 minutes.** Sit near them, signal alignment in your opener.
+- **Identify the swing votes.** Which delegations are technically in your bloc but ideologically flexible? Those are the ones you cultivate.
+- **Identify a peelable bloc.** If you can split one country off the opposing coalition, you've changed the math. The lead delegate from a small G77 country who feels ignored by the bloc heavyweight is often the easiest peel.
+""")
 
 # ============================================================
 # Tab 2: Guides
@@ -64,6 +99,7 @@ with tabs[1]:
             "How to win in GA",
             "How to win in Crisis",
             "How to write a working paper that merges",
+            "Common amendment patterns",
         ],
         horizontal=False,
         label_visibility="collapsed",
@@ -93,13 +129,13 @@ You got accepted, you got your country, the background guide is twenty pages lon
 
 ### Conference day
 - **Be on the speakers list within the first 20 minutes.** First impression matters. Chairs notice who's active early.
-- **In your first unmod, talk to five people.** Find your bloc. Don't try to lead a working paper alone if you're new — join one and become a sponsor.
+- **In your first unmod, talk to five people.** Find your bloc. Don't try to lead a working paper alone if you're new. Join one and become a sponsor.
 - **Take notes between sessions.** Who said what, who's on what side, who you can work with.
 - **Go to the social events.** Conference friends become real friends, and the team that travels well wins more.
 
 ### Post-conference
 - **Debrief with your delegation.** What worked, what flopped, what surprised you.
-- **Tell us what you learned** — use the Contribute page to put it into the team's knowledge.
+- **Tell us what you learned.** Use the Contribute page to put it into the team's knowledge.
 """)
 
     elif guide == "Position paper, in three paragraphs":
@@ -112,7 +148,7 @@ The team's position papers follow the three-question framework. Each paragraph a
 What does your country actually feel about this issue? Lead with their stated policy. Cite their voting record. Mention domestic constraints (lobbies, opposition, public opinion). End with the principle they'd defend in committee.
 
 ### Paragraph 2: International context
-What past international action exists? Cite real treaties and resolutions. Map the bloc dynamics — who's pushing, who's blocking. Acknowledge what your country opposes and why. Don't pretend the issue is uncontested.
+What past international action exists? Cite real treaties and resolutions. Map the bloc dynamics: who's pushing, who's blocking. Acknowledge what your country opposes and why. Don't pretend the issue is uncontested.
 
 ### Paragraph 3: Strategy
 What does your country want out of this committee? Be specific. List two or three concrete operative clauses you'd push or sponsor. Name the bloc you'd lead, join, or split. End with how you'd compromise (or what you'd never compromise on).
@@ -138,7 +174,7 @@ General Assembly committees are about coalition-building. The award goes to the 
 
 ### Early debate (first session)
 - Get on the speakers list immediately. Use your opener to signal your bloc and your priorities.
-- Use moderated caucuses to set framing — propose topics that favor your country's angle.
+- Use moderated caucuses to set framing. Propose topics that favor your country's angle.
 - Map the room: who's substantively engaged, who's there for the experience, who's a swing vote.
 
 ### Mid debate (unmoderated caucuses)
@@ -187,7 +223,7 @@ Crisis is the opposite of GA: fast, reactive, individual. The award goes to the 
 ### Common traps
 - Over-planning a script that the room derails
 - Passive defensive play (chairs notice)
-- Personal directives that are too vague ("I gather information") — name your agents, name your method
+- Personal directives that are too vague ("I gather information"). Name your agents, name your method.
 - Treating crisis like a debate club
 """)
 
@@ -210,7 +246,7 @@ Most working papers don't pass alone. The ones that win are the ones the room ca
 ### The negotiation
 - Get the strongest opposing paper's lead delegate in a corner. Identify what they actually need (one specific clause, usually).
 - Offer to incorporate it in exchange for their bloc's votes. Trade.
-- If you're the smaller party, propose a merge — being the merger, not the merged-into, is often a better outcome than going it alone.
+- If you're the smaller party, propose a merge. Being the merger, not the merged-into, is often a better outcome than going it alone.
 
 ### Sponsor list
 - Aim for breadth, not just heavyweights. A paper with five P5 sponsors and zero African states is a paper that won't pass.
@@ -221,6 +257,50 @@ Most working papers don't pass alone. The ones that win are the ones the room ca
 - If you lose, propose the strongest amendments to the winning paper. Get your operative language in even if your paper doesn't survive.
 """)
 
+    elif guide == "Common amendment patterns":
+        st.markdown("""
+## Common amendment patterns
+
+Amendments are the late-game lever. Once a paper is on the floor, the question shifts from "who wrote this" to "what does it actually say after we're done with it." Most awards are won or lost in the last hour of debate, on amendments.
+
+### The five patterns that work
+
+**1. The teeth amendment.** A paper has a vague clause; you sharpen it.
+*Original:* "Encourages member states to cooperate on technology transfer."
+*Amended:* "Calls upon developed states to dedicate at least 0.7% of GNI to climate adaptation technology transfer to LDCs by 2030, reporting annually to the SG."
+**Why it lands:** Specific verbs, real numbers, accountability. Chairs love this.
+
+**2. The carve-out amendment.** Protects your country's interest without blocking the resolution.
+*Use when:* the resolution is moving and you can't kill it, but it would damage your interests as written.
+**Example:** adding "with respect to the principle of national sovereignty over natural resources" to a resolution on environmental enforcement.
+
+**3. The merger amendment.** Takes the strongest clause from a competing paper and inserts it into the lead paper.
+*Use when:* two papers are running parallel, you sponsored the weaker one, and you want to live another day.
+**Why it lands:** Picks up the votes from the other paper's signatories.
+
+**4. The strike-and-replace.** Replace one operative clause entirely.
+*Use carefully:* this is more aggressive and tends to draw opposition. Best when the original clause is unworkable, not just imperfect.
+
+**5. The technical amendment.** Fixes typos, missing UN references, formatting.
+*Don't underestimate:* chairs notice when delegates clean up the document. Looks responsible.
+
+### Sequencing tip
+Get teeth and carve-out amendments in early, before the opposition has time to whip votes against them. Strike-and-replaces and mergers are end-of-debate moves once positions have hardened.
+
+### How to draft an amendment fast
+
+1. State the clause you're amending by number.
+2. State the change as `Insert / Strike / Replace`.
+3. Write the new language exactly.
+4. Sign three to five delegations as sponsors before submitting (chairs usually require 2–3 minimum).
+
+### What to avoid
+
+- **Vague friendly amendments** that don't actually change meaning. Chairs see right through these.
+- **Hostile amendments without a coalition.** You need pre-built support, or it dies on a roll-call vote.
+- **Amendment chains.** If you submit five amendments to the same clause, the chair starts ignoring them. Pick your shot.
+""")
+
 # ============================================================
 # Tab 3: Tactics & wisdom
 # ============================================================
@@ -229,6 +309,8 @@ with tabs[2]:
         "Section",
         [
             "The three-question framework",
+            "Country-prep checklist",
+            "What chairs are watching for",
             "Common mistakes",
             "How to actually be on the team",
         ],
@@ -264,6 +346,92 @@ The team's standard prep methodology. Works for any country, any topic, GA or cr
 
 ### Why three questions
 The same shape works for position papers (three paragraphs), opening speeches (three beats), caucus pitches (three talking points), and crisis directives (situation, response, escalation). Once you've used it a few times you stop having to think about it.
+""")
+
+    elif section == "Country-prep checklist":
+        st.markdown("""
+## Country-prep checklist
+
+Run this before any GA committee. Two hours, focused, and you walk in with everything you need.
+
+### Identity (15 min)
+- [ ] Form of government, current head of state, ruling party or coalition
+- [ ] One paragraph on domestic political constraints (which voter bloc would punish a softer position?)
+- [ ] Foreign policy doctrine (if there's a stated one, e.g. India's "strategic autonomy")
+- [ ] Two recent foreign-policy speeches by the foreign minister or UN ambassador
+
+### Topic-specific position (30 min)
+- [ ] Last three UN votes on this topic, with link to the resolution and your country's vote (Yes / No / Abstain)
+- [ ] Most recent statement at UN by your delegation on this topic (search un.org)
+- [ ] Any treaty your country is or isn't a party to that's relevant
+- [ ] Any domestic law that ties your hands or empowers you on this issue
+
+### International landscape (30 min)
+- [ ] Most recent GA or UNSC resolution on this topic: what passed, what didn't, which clauses are operative
+- [ ] Major bloc dynamics: which 3 blocs matter most here, and where you sit in each
+- [ ] Two countries you'll work with closely (and why)
+- [ ] One country you'll likely oppose (and why)
+
+### Strategy (30 min)
+- [ ] What does your country actually want from this committee? Specific outcome, not "a strong resolution"
+- [ ] Three operative clauses you'd push or sponsor (write them out)
+- [ ] One operative clause you'd never accept (write it out)
+- [ ] Your fallback if your preferred bloc fragments
+
+### Conference operations (15 min)
+- [ ] Read the chair's background guide (yes, again)
+- [ ] Note the questions to consider: chairs often signal what amendments they want to see
+- [ ] Print one copy of your position paper, one copy of three relevant resolution numbers, and a fresh notebook page
+
+### The night before
+- [ ] Memorize your opener (60–90 seconds)
+- [ ] Pack: position paper, business cards, snacks, water, charger, two pens
+- [ ] Read the background guide one more time, focusing on the questions to consider
+- [ ] Sleep
+""")
+
+    elif section == "What chairs are watching for":
+        st.markdown("""
+## What chairs are watching for
+
+The awards rubric is the official document. This is the operational version: what chairs actually note when they're scoring you in real time.
+
+### In your opener (first 10 minutes)
+- **Did you cite a real recent statement or resolution?** Specificity = preparation.
+- **Did you signal your bloc clearly?** Chairs map alliances early.
+- **Did you propose action, not just complain?** "Calls for a UN-led peacekeeping mission" beats "the situation is dire."
+- **Did you stay in time?** Going over 60–90 seconds in a country opener flags inexperience.
+
+### In moderated caucus
+- **Are you motioning topics that move debate forward?** Or repeating the same theme from your opener?
+- **Are you yielding speaking time to allies on purpose?** That's strategic; chairs note it.
+- **Are you naming countries and their positions?** That signals you've mapped the room.
+
+### In unmoderated caucus
+- **Are you the broker, the writer, or the joiner?** Chairs walk the room. They see who's drafting, who's signing, who's drifting.
+- **Are you talking to delegations outside your obvious bloc?** That's the highest-tier signal of an award delegate.
+- **Are you taking notes?** Chairs notice physical engagement.
+
+### On working papers
+- **Are you on the sponsors list of the right paper?** Being a sponsor of a strong paper that passes beats sole-authoring a weak one.
+- **Are your operative clauses specific and actionable?** Vague verbs (encourages, hopes, calls for cooperation) get marked down.
+- **Did you cite real UN resolutions?** Hallucinated references are a near-instant award disqualifier at top conferences.
+
+### On amendments
+- **Are you submitting amendments that improve the paper, or fight it?** Improvement-mode is more rewarded.
+- **Did you build sponsor coalitions before submitting?** A solo amendment dying on a vote looks worse than not submitting one.
+
+### Behaviorally
+- **Are you respectful in private negotiations?** Chairs hear about delegates who bullied or steamrolled in unmod.
+- **Are you punctual?** Late-back from breaks gets noticed.
+- **Are you helping new delegates?** Chairs see this. It can swing close awards in your favor.
+
+### What gets you docked
+- Reading directly from your laptop in formal speeches
+- Hallucinating UN resolution numbers
+- Disrupting the flow with frivolous points (point of order on a typo, etc.)
+- Going personal in a substantive disagreement
+- Position paper submitted late
 """)
 
     elif section == "Common mistakes":

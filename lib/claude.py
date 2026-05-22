@@ -1,6 +1,6 @@
 """Anthropic client wrapper with prompt caching + cost computation.
 
-Models locked: never use Opus in prod — too expensive for this app's budget envelope.
+Models locked: never use Opus in prod, since it's too expensive for this app's budget envelope.
 """
 from __future__ import annotations
 
@@ -165,7 +165,7 @@ def stream_chat(
     max_tokens: int = 1024,
     temperature: float = 1.0,
 ):
-    """Yield (text_delta, final_result_or_none) — final_result has token counts + cost."""
+    """Yield (text_delta, final_result_or_none); final_result has token counts + cost."""
     client = _client()
     model = tier.value
 

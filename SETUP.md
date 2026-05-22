@@ -68,8 +68,10 @@ This indexes the 5 seed docs (Art of MUN, MUN Claude, HRC, Global Commission Pri
 5. **Hosting** (~30 min):
    - Push repo to a private GitHub under your account
    - Connect to Streamlit Community Cloud (free for private repos as of late 2025)
-   - Add `secrets.toml` contents via the Streamlit Cloud secrets UI
-   - OR deploy to Railway ($5/mo): connect GitHub, add env vars
+   - The repo already includes `runtime.txt` (Python 3.11) and pinned `requirements.txt`, so the build is reproducible
+   - Add `secrets.toml` contents via the Streamlit Cloud secrets UI: paste the full `[anthropic]`, `[voyage]`, `[google]`, `[slack]`, `[app]` blocks; Streamlit Cloud parses TOML directly. Drop `service_account_path` in favor of pasting the JSON inline as `[google.service_account]` if needed.
+   - Set the entrypoint to `app.py`
+   - OR deploy to Railway ($5/mo): connect GitHub, add env vars; the repo's `Procfile` runs Streamlit on `$PORT`
 
 ## Tier 3: handoff to next Director (March 2027)
 

@@ -1,4 +1,4 @@
-"""Country brief generator — Queen's MUN team's 3-question framework.
+"""Country brief generator using the Queen's MUN team's 3-question framework.
 
 1. How does your country/character feel about this issue? Domestic actions taken?
 2. How does the international community feel? Past international actions? Next steps?
@@ -132,7 +132,7 @@ The team's prep philosophy:
 - Conference briefs are full and strategic (delegate has days to prep, then speaks for ~12 hours over a weekend)
 - For both: substance over performance. Specific operative clauses beat vague calls to "encourage cooperation".
 - Bloc-building matters as much as individual brilliance
-- Awards follow effort and substance — chairs reward delegates who clearly know their country's actual interests
+- Awards follow effort and substance: chairs reward delegates who clearly know their country's actual interests
 
 Output ONLY the brief itself in markdown. Do not include preamble, meta-commentary, or "here is the brief".
 """.format(framework=_THREE_Q_FRAMEWORK)

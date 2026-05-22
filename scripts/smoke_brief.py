@@ -37,7 +37,7 @@ conf = generate(BriefRequest(
     topic="The situation in Cambodia (post-Khmer Rouge tribunal accountability and regional stability)",
     committee="UNSC",
     depth="conference",
-    notes="NCSC LIII fall 2025 simulation. Jack has personal ground-truth on this committee — compare against his actual position paper for sanity check.",
+    notes="NCSC LIII fall 2025 simulation. Jack has personal ground-truth on this committee; compare against his actual position paper for sanity check.",
     user_slack_id="U_JACK_TEST",
 ))
 print(f"\n{conf.markdown}\n")
