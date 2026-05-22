@@ -1,14 +1,12 @@
 """Slack OAuth + role-based access.
 
-Two modes:
-- **Dev mode** (no `[slack].client_id` in secrets): auto-login as a hardcoded
-  dev user so local development isn't gated on a real Slack workspace.
-- **Production** (Slack app registered, client_id + client_secret in secrets):
-  standard OAuth v2 user-token flow via `https://slack.com/oauth/v2/authorize`.
-
-The User shape is identical in both modes; the `_resolve_role` mapping (admin /
-exec / delegate) is driven by `[app].admin_slack_user_ids` and
-`[app].exec_slack_user_ids` in secrets.
+Three modes, tried in order:
+- **Slack OAuth** (`[slack].client_id` + `client_secret` configured): full OAuth
+  v2 user-token flow. Production path once the QMUN Slack app is registered.
+- **Pilot gate** (`[app].pilot_passcode` set, no Slack OAuth): shared passcode +
+  name form. Roles resolved by name against `pilot_admin_names` / `pilot_exec_names`.
+  Used for the exec pilot before Slack OAuth is wired up.
+- **Dev fallback** (neither configured): auto-login as `_DEV_USER`. Local dev only.
 """
 from __future__ import annotations
 
@@ -70,6 +68,81 @@ def _resolve_role(slack_id: str) -> Role:
 
 
 _DEV_USER = User(slack_id="U_JACK_DEV", name="Jack Guillemette", role="admin")
+
+
+# ----- Pilot gate -----
+
+def _is_pilot_configured() -> bool:
+    try:
+        return bool(st.secrets["app"].get("pilot_passcode"))
+    except (KeyError, FileNotFoundError):
+        return False
+
+
+def _resolve_pilot_role(name: str) -> Role:
+    try:
+        admins = list(st.secrets["app"].get("pilot_admin_names", []))
+        execs = list(st.secrets["app"].get("pilot_exec_names", []))
+    except (KeyError, FileNotFoundError):
+        admins, execs = [], []
+    n = name.strip().lower()
+    if any(a.strip().lower() == n for a in admins):
+        return "admin"
+    if any(e.strip().lower() == n for e in execs):
+        return "exec"
+    return "delegate"
+
+
+def _render_pilot_gate() -> "User | None":
+    """Render the passcode sign-in form. Returns User on success, None if waiting."""
+    try:
+        correct = st.secrets["app"].get("pilot_passcode", "")
+    except (KeyError, FileNotFoundError):
+        correct = ""
+
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        st.markdown(
+            """
+<div style='text-align:center; padding:3.5rem 0 1.75rem;'>
+  <div style='font-family:"Fraunces",serif; font-size:1.9rem; color:#0d1b3e;
+              font-weight:700; letter-spacing:-0.02em;'>Queen's MUN</div>
+  <div style='color:#777; font-size:0.88rem; margin-top:0.35rem; letter-spacing:0.01em;'>
+    Pilot workspace
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        with st.form("pilot_gate"):
+            name = st.text_input("Your name", placeholder="e.g. Jane Doe")
+            code = st.text_input("Pilot code", type="password", placeholder="Ask Jack")
+            submitted = st.form_submit_button("Sign in", use_container_width=True, type="primary")
+
+        if st.session_state.get("_pilot_error"):
+            st.error(st.session_state["_pilot_error"])
+
+    if submitted:
+        name = name.strip()
+        if not name:
+            st.session_state["_pilot_error"] = "Enter your name."
+            st.rerun()
+        elif code.strip() != correct:
+            st.session_state["_pilot_error"] = "Wrong code. Check with Jack."
+            st.rerun()
+        else:
+            st.session_state.pop("_pilot_error", None)
+            role = _resolve_pilot_role(name)
+            user = User(
+                slack_id="PILOT_" + name.replace(" ", "_"),
+                name=name,
+                role=role,
+            )
+            st.session_state["user"] = user
+            return user
+
+    return None
 
 
 # ----- OAuth flow -----
@@ -179,28 +252,33 @@ def _handle_oauth_callback() -> User | None:
 # ----- Public API -----
 
 def require_login() -> User:
-    """Return the current user, prompting Slack OAuth if configured.
+    """Return the current user. Mode depends on secrets configuration.
 
-    Behavior:
-    - If a User is already in session, return it.
-    - If Slack OAuth isn't configured, auto-login as the dev user.
-    - If Slack OAuth IS configured: handle the callback if we're returning
-      from Slack, otherwise render the sign-in panel and stop the page.
+    Priority:
+    1. Already in session: return immediately.
+    2. Slack OAuth configured: run OAuth flow.
+    3. Pilot passcode configured: show passcode gate.
+    4. Neither: auto-login as dev user (local dev only).
     """
     user = st.session_state.get("user")
     if user is not None:
         return user
 
-    if not _is_oauth_configured():
-        st.session_state["user"] = _DEV_USER
-        return _DEV_USER
+    if _is_oauth_configured():
+        callback_user = _handle_oauth_callback()
+        if callback_user is not None:
+            return callback_user
+        _render_signin_panel()
+        st.stop()
 
-    callback_user = _handle_oauth_callback()
-    if callback_user is not None:
-        return callback_user
+    if _is_pilot_configured():
+        pilot_user = _render_pilot_gate()
+        if pilot_user is None:
+            st.stop()
+        return pilot_user
 
-    _render_signin_panel()
-    st.stop()
+    st.session_state["user"] = _DEV_USER
+    return _DEV_USER
 
 
 def current_user() -> User | None:
@@ -218,3 +296,4 @@ def require_exec() -> User:
 def sign_out() -> None:
     st.session_state.pop("user", None)
     st.session_state.pop("_oauth_state", None)
+    st.session_state.pop("_pilot_error", None)

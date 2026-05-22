@@ -33,6 +33,71 @@ announcement = state.get("announcement")
 first_name = user.name.split()[0] if user.name else "there"
 my_assignments = state_lib.assignments_for_delegate(user.name)
 
+# ---------------- Pilot welcome panel ----------------
+if not st.session_state.get("welcome_dismissed"):
+    with st.container(border=True):
+        head_col, dismiss_col = st.columns([8, 1])
+        with head_col:
+            st.markdown(
+                "<div style='font-size:0.95rem; font-weight:600; color:#0d1b3e; padding-top:0.1rem;'>"
+                "You're in the pilot."
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        with dismiss_col:
+            if st.button("Got it", key="dismiss_welcome", use_container_width=True):
+                st.session_state["welcome_dismissed"] = True
+                st.rerun()
+
+        st.markdown(
+            "<div style='color:#555; font-size:0.88rem; margin-top:0.25rem; margin-bottom:1rem;'>"
+            "Six people testing this before the full-team launch in September. "
+            "Your job: find what's broken, what's confusing, and what's actually useful."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        w1, w2, w3 = st.columns(3, gap="medium")
+        with w1:
+            st.markdown(
+                """
+<div style='border:1px solid rgba(13,27,62,0.12); border-radius:8px; padding:0.85rem 1rem;'>
+  <div style='font-weight:600; font-size:0.85rem; color:#0d1b3e; margin-bottom:0.3rem;'>Archive</div>
+  <div style='font-size:0.82rem; color:#555; line-height:1.5;'>Search "working paper" or "crisis directive." Does it surface useful docs? Are the results ranked right?</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+        with w2:
+            st.markdown(
+                """
+<div style='border:1px solid rgba(13,27,62,0.12); border-radius:8px; padding:0.85rem 1rem;'>
+  <div style='font-weight:600; font-size:0.85rem; color:#0d1b3e; margin-bottom:0.3rem;'>Brief generator</div>
+  <div style='font-size:0.82rem; color:#555; line-height:1.5;'>Generate a mock brief for any country and topic. Is the output something a delegate would actually use?</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+        with w3:
+            st.markdown(
+                """
+<div style='border:1px solid rgba(13,27,62,0.12); border-radius:8px; padding:0.85rem 1rem;'>
+  <div style='font-weight:600; font-size:0.85rem; color:#0d1b3e; margin-bottom:0.3rem;'>Mentor chatbot</div>
+  <div style='font-size:0.82rem; color:#555; line-height:1.5;'>Ask it something a first-timer would ask. Does it give Queen's-specific advice or generic UN platitudes?</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+        st.markdown(
+            "<div style='color:#888; font-size:0.8rem; margin-top:1rem;'>"
+            "Feedback: iMessage or Slack Jack directly. No form yet."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+
 # ---------------- Announcement banner ----------------
 if announcement and announcement.get("text"):
     st.markdown(
