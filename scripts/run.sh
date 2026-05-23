@@ -5,4 +5,4 @@
 set -e
 cd "$(dirname "$0")/.."
 source .venv/bin/activate
-exec arch -arm64 .venv/bin/streamlit run app.py "$@"
+exec arch -arm64 .venv/bin/python3 -m streamlit run app.py "$@"
