@@ -753,24 +753,20 @@ def top_nav(user) -> None:
             unsafe_allow_html=True,
         )
     with user_col:
-        info_col, signout_col = st.columns([5, 2])
-        with info_col:
-            st.markdown(
-                f"<div class='qmun-user-row'>"
-                f"<div class='qmun-user-info'>"
-                f"<div class='qmun-user-name'>{user.name}</div>"
-                f"<div class='qmun-user-role'>{user.role.title()}</div>"
-                f"</div>"
-                f"<div class='qmun-user-avatar'>{initials}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-        with signout_col:
-            st.markdown("<div style='padding-top:0.4rem;'></div>", unsafe_allow_html=True)
-            if st.button("Sign out", key="nav_signout", use_container_width=True):
-                from lib.auth import sign_out
-                sign_out()
-                st.rerun()
+        st.markdown(
+            f"<div class='qmun-user-row'>"
+            f"<div class='qmun-user-info'>"
+            f"<div class='qmun-user-name'>{user.name}</div>"
+            f"<div class='qmun-user-role'>{user.role.title()}</div>"
+            f"</div>"
+            f"<div class='qmun-user-avatar'>{initials}</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("Sign out", key="nav_signout", use_container_width=True):
+            from lib.auth import sign_out
+            sign_out()
+            st.rerun()
 
     # Thin tricolor accent rule under brand row
     st.markdown(tricolor_bar(height=2), unsafe_allow_html=True)
