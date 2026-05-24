@@ -745,43 +745,39 @@ def tag(text: str, *, accent: bool = False) -> str:
 
 
 def top_nav(user) -> None:
-    """Single-bar nav with labelled group separators.
+    """Two-level nav: group buttons on row 1, sub-pages expand below on click.
 
-    Layout: brand | Home | SEP(Prep) Brief Archive | SEP(Learn) Chatbot Training |
-            SEP(Team) Socials Scouting Contribute | SEP(Admin) Director | user
+    Row 1: brand | Home | [Prep] [Learn] [Team] [Admin] | user + sign-out
+    Row 2: (only when a group is active) sub-page links aligned under that group
     """
     initials = "".join(w[0].upper() for w in user.name.split()[:2]) if user.name else "?"
     first_name = user.name.split()[0] if user.name else user.name
 
-    # Groups: (label_above_separator, [(nav_label, page_path), ...])
-    # None label = no separator before this group (first group)
-    groups = [
-        (None,   [("Home",      "app.py")]),
-        ("Prep", [("Brief",     "pages/2_Brief.py"),
-                  ("Archive",   "pages/1_Archive.py")]),
-        ("Learn",[("Chatbot",   "pages/3_Chatbot.py"),
-                  ("Training",  "pages/4_Training.py")]),
-        ("Team", [("Socials",   "pages/7_Socials.py"),
-                  ("Scouting",  "pages/8_Scouting.py"),
-                  ("Contribute","pages/6_Alumni_Interview.py")]),
+    GROUPS = [
+        ("Prep",  [("Brief",      "pages/2_Brief.py"),
+                   ("Archive",    "pages/1_Archive.py")]),
+        ("Learn", [("Chatbot",    "pages/3_Chatbot.py"),
+                   ("Training",   "pages/4_Training.py")]),
+        ("Team",  [("Socials",    "pages/7_Socials.py"),
+                   ("Scouting",   "pages/8_Scouting.py"),
+                   ("Contribute", "pages/6_Alumni_Interview.py")]),
     ]
     if user.is_exec:
-        groups.append(("Admin", [("Director", "pages/5_Director.py")]))
+        GROUPS.append(("Admin", [("Director", "pages/5_Director.py")]))
 
-    LINK_W, SEP_W, BRAND_W, USER_W = 0.85, 0.32, 2.2, 2.2
+    active = st.session_state.get("nav_active_group")
+    n_grps = len(GROUPS)
 
-    widths = [BRAND_W]
-    for i, (grp_label, grp_pages) in enumerate(groups):
-        if i > 0:
-            widths.append(SEP_W)
-        widths.extend(LINK_W for _ in grp_pages)
-    widths.append(USER_W)
+    BRAND_W = 2.5
+    HOME_W  = 0.8
+    GRP_W   = 1.0
+    USER_W  = 2.0
+    NAV_TOTAL = BRAND_W + HOME_W + n_grps * GRP_W + USER_W
 
-    cols = st.columns(widths)
-    idx = 0
+    # ── Row 1 ──────────────────────────────────────────────────────────────
+    row1 = st.columns([BRAND_W, HOME_W] + [GRP_W] * n_grps + [USER_W])
 
-    # Brand
-    with cols[idx]:
+    with row1[0]:
         st.markdown(
             f"<div class='qmun-brand-row' style='padding:0.3rem 0;'>"
             f"{qmun_logo(size=28)}"
@@ -789,29 +785,24 @@ def top_nav(user) -> None:
             f"</div>",
             unsafe_allow_html=True,
         )
-    idx += 1
 
-    # Groups
-    for i, (grp_label, grp_pages) in enumerate(groups):
-        if i > 0:
-            with cols[idx]:
+    with row1[1]:
+        st.page_link("app.py", label="Home")
+
+    for i, (grp_name, _) in enumerate(GROUPS):
+        with row1[2 + i]:
+            is_active = active == grp_name
+            if st.button(grp_name, key=f"nav_grp_{grp_name}", use_container_width=True):
+                st.session_state["nav_active_group"] = None if is_active else grp_name
+                st.rerun()
+            if is_active:
                 st.markdown(
-                    f"<div style='display:flex;flex-direction:column;align-items:center;"
-                    f"justify-content:center;height:100%;min-height:38px;gap:3px;'>"
-                    f"<div style='font-size:0.52rem;color:var(--text-faint);text-transform:uppercase;"
-                    f"letter-spacing:0.1em;white-space:nowrap;'>{grp_label}</div>"
-                    f"<div style='width:1px;height:10px;background:var(--border-strong);'></div>"
-                    f"</div>",
+                    "<div style='height:2px;background:var(--accent);"
+                    "border-radius:1px;margin-top:-6px;'></div>",
                     unsafe_allow_html=True,
                 )
-            idx += 1
-        for nav_label, path in grp_pages:
-            with cols[idx]:
-                st.page_link(path, label=nav_label)
-            idx += 1
 
-    # User chip + sign-out
-    with cols[idx]:
+    with row1[-1]:
         st.markdown(
             f"<div class='qmun-user-row' style='padding:0.2rem 0;gap:8px;'>"
             f"<div class='qmun-user-info'>"
@@ -827,8 +818,21 @@ def top_nav(user) -> None:
             sign_out()
             st.rerun()
 
+    # ── Row 2: sub-pages (only when a group is active) ─────────────────────
+    if active:
+        active_idx = next((i for i, (n, _) in enumerate(GROUPS) if n == active), None)
+        if active_idx is not None:
+            grp_pages = GROUPS[active_idx][1]
+            PAGE_W  = 1.2
+            offset  = BRAND_W + HOME_W + active_idx * GRP_W
+            trailing = max(0.1, NAV_TOTAL - offset - len(grp_pages) * PAGE_W)
+            sub_cols = st.columns([offset] + [PAGE_W] * len(grp_pages) + [trailing])
+            for j, (label, path) in enumerate(grp_pages):
+                with sub_cols[1 + j]:
+                    st.page_link(path, label=label)
+
     st.markdown(tricolor_bar(height=1), unsafe_allow_html=True)
-    st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
 
 
 def feature_tile(*, icon_svg: str, title: str, blurb: str, page_path: str, link_label: str = "Open") -> None:
