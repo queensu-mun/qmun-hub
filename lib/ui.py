@@ -139,21 +139,32 @@ blockquote {
     flex-shrink: 0;
 }
 
-/* Streamlit page links: clean text-style nav items */
+/* Streamlit page links: compact single-row nav */
 [data-testid="stPageLink-NavLink"] {
     background: transparent !important;
     border: none !important;
-    border-radius: 6px !important;
-    padding: 0.45rem 0.85rem !important;
+    border-radius: 5px !important;
+    padding: 0.3rem 0.4rem !important;
     color: var(--text-muted) !important;
     font-weight: 500 !important;
-    font-size: 0.88rem !important;
+    font-size: 0.82rem !important;
     text-decoration: none !important;
     transition: color 140ms ease, background 140ms ease;
+    white-space: nowrap;
 }
 [data-testid="stPageLink-NavLink"]:hover {
     color: var(--text) !important;
     background: var(--surface) !important;
+}
+
+/* Sign-out: muted text button, not full-weight */
+button[data-testid="stBaseButton-secondary"]:has(p) {
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-faint) !important;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.6rem !important;
+    margin-top: 0.3rem;
 }
 
 /* Buttons */
@@ -734,32 +745,45 @@ def tag(text: str, *, accent: bool = False) -> str:
 
 
 def top_nav(user) -> None:
-    """Render the top nav: brand on left, page links centered, user chip on right.
-
-    Built with st.columns + small markdown chunks (no big nested HTML blocks)
-    so Streamlit's sanitizer doesn't break the structure.
-    """
+    """Single-bar nav: brand | page links | user chip — all on one row."""
     initials = "".join(w[0].upper() for w in user.name.split()[:2]) if user.name else "?"
+    first_name = user.name.split()[0] if user.name else user.name
 
-    # Top brand row
-    brand_col, _spacer, user_col = st.columns([3, 6, 3])
-    with brand_col:
+    pages = [
+        ("Home", "app.py"),
+        ("Brief", "pages/2_Brief.py"),
+        ("Archive", "pages/1_Archive.py"),
+        ("Chatbot", "pages/3_Chatbot.py"),
+        ("Training", "pages/4_Training.py"),
+        ("Contribute", "pages/6_Alumni_Interview.py"),
+    ]
+    if user.is_exec:
+        pages.append(("Director", "pages/5_Director.py"))
+
+    # One row: brand(2) | links(1 each) | user(2)
+    cols = st.columns([2] + [1] * len(pages) + [2])
+
+    with cols[0]:
         st.markdown(
-            f"<div class='qmun-brand-row'>{qmun_logo(size=36)}"
-            f"<div class='qmun-brand-text-block'>"
-            f"<div class='qmun-brand-text'>Queen's MUN</div>"
-            f"<div class='qmun-brand-sub'>Team workspace</div>"
-            f"</div></div>",
+            f"<div class='qmun-brand-row' style='padding:0.3rem 0;'>"
+            f"{qmun_logo(size=28)}"
+            f"<div class='qmun-brand-text' style='font-size:0.9rem;'>Queen's MUN</div>"
+            f"</div>",
             unsafe_allow_html=True,
         )
-    with user_col:
+
+    for i, (label, path) in enumerate(pages):
+        with cols[1 + i]:
+            st.page_link(path, label=label)
+
+    with cols[-1]:
         st.markdown(
-            f"<div class='qmun-user-row'>"
+            f"<div class='qmun-user-row' style='padding:0.2rem 0; gap:8px;'>"
             f"<div class='qmun-user-info'>"
-            f"<div class='qmun-user-name'>{user.name}</div>"
+            f"<div class='qmun-user-name' style='font-size:0.82rem;'>{first_name}</div>"
             f"<div class='qmun-user-role'>{user.role.title()}</div>"
             f"</div>"
-            f"<div class='qmun-user-avatar'>{initials}</div>"
+            f"<div class='qmun-user-avatar' style='width:28px;height:28px;font-size:0.7rem;'>{initials}</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -768,30 +792,9 @@ def top_nav(user) -> None:
             sign_out()
             st.rerun()
 
-    # Thin tricolor accent rule under brand row
-    st.markdown(tricolor_bar(height=2), unsafe_allow_html=True)
-
-    # Nav links row
-    pages = [
-        ("Home", "app.py"),
-        ("Brief", "pages/2_Brief.py"),
-        ("Archive", "pages/1_Archive.py"),
-        ("Chatbot", "pages/3_Chatbot.py"),
-        ("Training", "pages/4_Training.py"),
-        ("Socials", "pages/7_Socials.py"),
-        ("Scouting", "pages/8_Scouting.py"),
-        ("Contribute", "pages/6_Alumni_Interview.py"),
-    ]
-    if user.is_exec:
-        pages.append(("Director", "pages/5_Director.py"))
-
-    # Equal-weight columns spread links evenly across the full width.
-    nav_cols = st.columns(len(pages))
-    for col, (label, path) in zip(nav_cols, pages):
-        with col:
-            st.page_link(path, label=label)
-
-    st.markdown("<div style='height:1.5rem;'></div>", unsafe_allow_html=True)
+    # 1px tricolor line as bottom border of the nav bar
+    st.markdown(tricolor_bar(height=1), unsafe_allow_html=True)
+    st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
 
 
 def feature_tile(*, icon_svg: str, title: str, blurb: str, page_path: str, link_label: str = "Open") -> None:
