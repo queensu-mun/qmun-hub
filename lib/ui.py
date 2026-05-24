@@ -157,6 +157,50 @@ blockquote {
     background: var(--surface) !important;
 }
 
+/* Nav popovers: look like plain text nav items, not form buttons */
+[data-testid="stPopover"] button {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    color: var(--text-muted) !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    padding: 0.3rem 0.5rem !important;
+    transition: color 140ms ease, background 140ms ease !important;
+}
+[data-testid="stPopover"] button:hover {
+    background: var(--surface) !important;
+    border: none !important;
+    color: var(--text) !important;
+}
+[data-testid="stPopover"] button p {
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+}
+/* Popover panel: match app surface */
+[data-testid="stPopoverBody"] {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.25rem !important;
+    min-width: 130px !important;
+}
+[data-testid="stPopoverBody"] [data-testid="stPageLink-NavLink"] {
+    display: block !important;
+    padding: 0.45rem 0.85rem !important;
+    border-radius: 5px !important;
+    font-size: 0.86rem !important;
+    font-weight: 500 !important;
+    color: var(--text-muted) !important;
+    white-space: nowrap !important;
+}
+[data-testid="stPopoverBody"] [data-testid="stPageLink-NavLink"]:hover {
+    background: var(--surface-3) !important;
+    color: var(--text) !important;
+}
+
 /* Sign-out: muted text button, not full-weight */
 button[data-testid="stBaseButton-secondary"]:has(p) {
     background: transparent !important;
@@ -745,11 +789,7 @@ def tag(text: str, *, accent: bool = False) -> str:
 
 
 def top_nav(user) -> None:
-    """Two-level nav: group buttons on row 1, sub-pages expand below on click.
-
-    Row 1: brand | Home | [Prep] [Learn] [Team] [Admin] | user + sign-out
-    Row 2: (only when a group is active) sub-page links aligned under that group
-    """
+    """Single-row nav: brand | Home | popover groups | user + sign-out."""
     initials = "".join(w[0].upper() for w in user.name.split()[:2]) if user.name else "?"
     first_name = user.name.split()[0] if user.name else user.name
 
@@ -765,51 +805,40 @@ def top_nav(user) -> None:
     if user.is_exec:
         GROUPS.append(("Admin", [("Director", "pages/5_Director.py")]))
 
-    active = st.session_state.get("nav_active_group")
     n_grps = len(GROUPS)
-
     BRAND_W = 2.5
-    HOME_W  = 0.8
-    GRP_W   = 1.0
-    USER_W  = 2.0
-    NAV_TOTAL = BRAND_W + HOME_W + n_grps * GRP_W + USER_W
+    HOME_W  = 0.7
+    GRP_W   = 0.85
+    USER_W  = 2.2
 
-    # ── Row 1 ──────────────────────────────────────────────────────────────
-    row1 = st.columns([BRAND_W, HOME_W] + [GRP_W] * n_grps + [USER_W])
+    cols = st.columns([BRAND_W, HOME_W] + [GRP_W] * n_grps + [USER_W])
 
-    with row1[0]:
+    with cols[0]:
         st.markdown(
             f"<div class='qmun-brand-row' style='padding:0.3rem 0;'>"
-            f"{qmun_logo(size=28)}"
-            f"<div class='qmun-brand-text' style='font-size:0.9rem;'>Queen's MUN</div>"
+            f"{qmun_logo(size=26)}"
+            f"<div class='qmun-brand-text' style='font-size:0.88rem;'>Queen's MUN</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
 
-    with row1[1]:
+    with cols[1]:
         st.page_link("app.py", label="Home")
 
-    for i, (grp_name, _) in enumerate(GROUPS):
-        with row1[2 + i]:
-            is_active = active == grp_name
-            if st.button(grp_name, key=f"nav_grp_{grp_name}", use_container_width=True):
-                st.session_state["nav_active_group"] = None if is_active else grp_name
-                st.rerun()
-            if is_active:
-                st.markdown(
-                    "<div style='height:2px;background:var(--accent);"
-                    "border-radius:1px;margin-top:-6px;'></div>",
-                    unsafe_allow_html=True,
-                )
+    for i, (grp_name, pages) in enumerate(GROUPS):
+        with cols[2 + i]:
+            with st.popover(grp_name, use_container_width=True):
+                for label, path in pages:
+                    st.page_link(path, label=label)
 
-    with row1[-1]:
+    with cols[-1]:
         st.markdown(
-            f"<div class='qmun-user-row' style='padding:0.2rem 0;gap:8px;'>"
+            f"<div class='qmun-user-row' style='padding:0.25rem 0;gap:8px;'>"
             f"<div class='qmun-user-info'>"
-            f"<div class='qmun-user-name' style='font-size:0.82rem;'>{first_name}</div>"
+            f"<div class='qmun-user-name' style='font-size:0.8rem;'>{first_name}</div>"
             f"<div class='qmun-user-role'>{user.role.title()}</div>"
             f"</div>"
-            f"<div class='qmun-user-avatar' style='width:28px;height:28px;font-size:0.7rem;'>{initials}</div>"
+            f"<div class='qmun-user-avatar' style='width:26px;height:26px;font-size:0.68rem;'>{initials}</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -817,19 +846,6 @@ def top_nav(user) -> None:
             from lib.auth import sign_out
             sign_out()
             st.rerun()
-
-    # ── Row 2: sub-pages (only when a group is active) ─────────────────────
-    if active:
-        active_idx = next((i for i, (n, _) in enumerate(GROUPS) if n == active), None)
-        if active_idx is not None:
-            grp_pages = GROUPS[active_idx][1]
-            PAGE_W  = 1.2
-            offset  = BRAND_W + HOME_W + active_idx * GRP_W
-            trailing = max(0.1, NAV_TOTAL - offset - len(grp_pages) * PAGE_W)
-            sub_cols = st.columns([offset] + [PAGE_W] * len(grp_pages) + [trailing])
-            for j, (label, path) in enumerate(grp_pages):
-                with sub_cols[1 + j]:
-                    st.page_link(path, label=label)
 
     st.markdown(tricolor_bar(height=1), unsafe_allow_html=True)
     st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)

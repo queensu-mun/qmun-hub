@@ -39,7 +39,7 @@ if not st.session_state.get("welcome_dismissed"):
         head_col, dismiss_col = st.columns([8, 1])
         with head_col:
             st.markdown(
-                "<div style='font-size:0.95rem; font-weight:600; color:#0d1b3e; padding-top:0.1rem;'>"
+                "<div style='font-size:0.95rem; font-weight:600; color:var(--text); padding-top:0.1rem;'>"
                 "You're in the pilot."
                 "</div>",
                 unsafe_allow_html=True,
@@ -50,7 +50,7 @@ if not st.session_state.get("welcome_dismissed"):
                 st.rerun()
 
         st.markdown(
-            "<div style='color:#555; font-size:0.88rem; margin-top:0.25rem; margin-bottom:1rem;'>"
+            "<div style='color:var(--text-muted); font-size:0.88rem; margin-top:0.25rem; margin-bottom:1rem;'>"
             "Six people testing this before the full-team launch in September. "
             "Your job: find what's broken, what's confusing, and what's actually useful."
             "</div>",
@@ -61,9 +61,9 @@ if not st.session_state.get("welcome_dismissed"):
         with w1:
             st.markdown(
                 """
-<div style='border:1px solid rgba(13,27,62,0.12); border-radius:8px; padding:0.85rem 1rem;'>
-  <div style='font-weight:600; font-size:0.85rem; color:#0d1b3e; margin-bottom:0.3rem;'>Archive</div>
-  <div style='font-size:0.82rem; color:#555; line-height:1.5;'>Search "working paper" or "crisis directive." Does it surface useful docs? Are the results ranked right?</div>
+<div style='border:1px solid var(--border); border-radius:8px; padding:0.85rem 1rem; background:var(--surface-2);'>
+  <div style='font-weight:600; font-size:0.85rem; color:var(--text); margin-bottom:0.3rem;'>Archive</div>
+  <div style='font-size:0.82rem; color:var(--text-muted); line-height:1.5;'>Search "working paper" or "crisis directive." Does it surface useful docs? Are the results ranked right?</div>
 </div>
 """,
                 unsafe_allow_html=True,
@@ -71,9 +71,9 @@ if not st.session_state.get("welcome_dismissed"):
         with w2:
             st.markdown(
                 """
-<div style='border:1px solid rgba(13,27,62,0.12); border-radius:8px; padding:0.85rem 1rem;'>
-  <div style='font-weight:600; font-size:0.85rem; color:#0d1b3e; margin-bottom:0.3rem;'>Brief generator</div>
-  <div style='font-size:0.82rem; color:#555; line-height:1.5;'>Generate a mock brief for any country and topic. Is the output something a delegate would actually use?</div>
+<div style='border:1px solid var(--border); border-radius:8px; padding:0.85rem 1rem; background:var(--surface-2);'>
+  <div style='font-weight:600; font-size:0.85rem; color:var(--text); margin-bottom:0.3rem;'>Brief generator</div>
+  <div style='font-size:0.82rem; color:var(--text-muted); line-height:1.5;'>Generate a mock brief for any country and topic. Is the output something a delegate would actually use?</div>
 </div>
 """,
                 unsafe_allow_html=True,
@@ -81,17 +81,17 @@ if not st.session_state.get("welcome_dismissed"):
         with w3:
             st.markdown(
                 """
-<div style='border:1px solid rgba(13,27,62,0.12); border-radius:8px; padding:0.85rem 1rem;'>
-  <div style='font-weight:600; font-size:0.85rem; color:#0d1b3e; margin-bottom:0.3rem;'>Mentor chatbot</div>
-  <div style='font-size:0.82rem; color:#555; line-height:1.5;'>Ask it something a first-timer would ask. Does it give Queen's-specific advice or generic UN platitudes?</div>
+<div style='border:1px solid var(--border); border-radius:8px; padding:0.85rem 1rem; background:var(--surface-2);'>
+  <div style='font-weight:600; font-size:0.85rem; color:var(--text); margin-bottom:0.3rem;'>Mentor chatbot</div>
+  <div style='font-size:0.82rem; color:var(--text-muted); line-height:1.5;'>Ask it something a first-timer would ask. Does it give Queen's-specific advice or generic UN platitudes?</div>
 </div>
 """,
                 unsafe_allow_html=True,
             )
 
         st.markdown(
-            "<div style='color:#888; font-size:0.8rem; margin-top:1rem;'>"
-            "Feedback: iMessage or Slack Jack directly. No form yet."
+            "<div style='color:var(--text-faint); font-size:0.8rem; margin-top:1rem;'>"
+            "Feedback: iMessage or Slack Jack directly."
             "</div>",
             unsafe_allow_html=True,
         )
@@ -143,33 +143,27 @@ with hero_left:
         unsafe_allow_html=True,
     )
 
-    # Command bar
-    cb_cols = st.columns([4, 1.2])
-    with cb_cols[0]:
-        cmd = st.text_input(
-            "Command",
-            placeholder="Search, prep a country, ask...",
-            label_visibility="collapsed",
-            key="home_command_bar",
-        )
-    with cb_cols[1]:
-        action = st.selectbox(
-            "Action",
-            ["Search", "Brief", "Ask"],
-            label_visibility="collapsed",
-            key="home_command_action",
-        )
-
+    cmd = st.text_input(
+        "Search",
+        placeholder="Search docs, countries, topics...",
+        label_visibility="collapsed",
+        key="home_command_bar",
+    )
     if cmd:
-        if action == "Search":
-            st.session_state["archive_seed_query"] = cmd
-            st.switch_page("pages/1_Archive.py")
-        elif action == "Brief":
-            st.session_state["brief_seed_topic"] = cmd
+        st.session_state["archive_seed_query"] = cmd
+        st.switch_page("pages/1_Archive.py")
+
+    st.markdown("<div style='height:0.4rem;'></div>", unsafe_allow_html=True)
+    a1, a2, a3 = st.columns(3, gap="small")
+    with a1:
+        if st.button("Generate brief", use_container_width=True):
             st.switch_page("pages/2_Brief.py")
-        elif action == "Ask":
-            st.session_state["mentor_seed_question"] = cmd
+    with a2:
+        if st.button("Ask the mentor", use_container_width=True):
             st.switch_page("pages/3_Chatbot.py")
+    with a3:
+        if st.button("Training guides", use_container_width=True):
+            st.switch_page("pages/4_Training.py")
 
 st.markdown("<div style='height:2.5rem;'></div>", unsafe_allow_html=True)
 
@@ -241,15 +235,6 @@ if mon or thu:
 """
         )
     st.markdown(f"<div class='week-strip'>{''.join(cells)}</div>", unsafe_allow_html=True)
-elif user.is_exec:
-    st.markdown("<div class='section-head'><h3>This week</h3></div>", unsafe_allow_html=True)
-    st.markdown(
-        "<div class='subtle' style='padding: 1rem 0 2rem;'>"
-        "No mock topics set. Configure in "
-        "<a href='/Director' style='color:var(--accent); border-bottom:none;'>Director tools</a>."
-        "</div>",
-        unsafe_allow_html=True,
-    )
 
 # ---------------- Upcoming socials ----------------
 upcoming = state_lib.upcoming_socials(limit=3)

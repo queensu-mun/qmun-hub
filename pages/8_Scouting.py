@@ -20,9 +20,17 @@ page_header(
 delegations = state_lib.list_delegations()
 
 if not delegations:
-    st.info(
-        "No scouting reports yet. This page populates as alumni submit interviews "
-        "and directors add manual notes from conferences."
+    st.markdown(
+        """
+<div style='padding:3rem 0 2rem; text-align:center;'>
+  <div style='font-size:1.1rem; font-weight:600; color:var(--text); margin-bottom:0.5rem;'>No scouting reports yet</div>
+  <div style='color:var(--text-muted); font-size:0.9rem; max-width:420px; margin:0 auto; line-height:1.6;'>
+    This page builds from alumni intel and director observations. Reports on rival delegations
+    will appear here as the team documents conferences.
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
     )
 else:
     # Strength filter

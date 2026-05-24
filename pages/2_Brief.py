@@ -95,6 +95,8 @@ if generate_btn:
             }
             badge = "Cache hit · $0.00" if final_brief.cache_hit else f"Generated · ${final_brief.cost_usd:.4f}"
             st.markdown(f"<div class='subtle'>{badge}</div>", unsafe_allow_html=True)
+            with st.expander("Copy as plain text"):
+                st.code(final_brief.markdown, language="markdown")
 
 elif "last_brief" in st.session_state:
     b = st.session_state["last_brief"]
@@ -102,6 +104,8 @@ elif "last_brief" in st.session_state:
     st.markdown(b["markdown"])
     badge = "Cache hit · $0.00" if b["cache_hit"] else f"Generated · ${b['cost']:.4f}"
     st.markdown(f"<div class='subtle'>{badge}</div>", unsafe_allow_html=True)
+    with st.expander("Copy as plain text"):
+        st.code(b["markdown"], language="markdown")
 
 st.divider()
 

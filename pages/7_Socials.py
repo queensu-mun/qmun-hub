@@ -85,16 +85,33 @@ def _render(s: dict) -> None:
                         st.caption(f"~~{att['filename']}~~ (file missing)")
 
 
-st.markdown("### Upcoming")
-if upcoming:
-    for s in upcoming:
-        _render(s)
+if not socials:
+    st.markdown(
+        """
+<div style='padding:3rem 0 2rem; text-align:center;'>
+  <div style='font-size:1.1rem; font-weight:600; color:var(--text); margin-bottom:0.5rem;'>Nothing scheduled yet</div>
+  <div style='color:var(--text-muted); font-size:0.9rem; max-width:380px; margin:0 auto; line-height:1.6;'>
+    Lineskip nights, formals, and team dinners will appear here once the director adds them.
+    Check back before each conference week.
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 else:
-    st.caption("Nothing scheduled. Check back, or ping the directors.")
+    st.markdown("### Upcoming")
+    if upcoming:
+        for s in upcoming:
+            _render(s)
+    else:
+        st.markdown(
+            "<div class='subtle' style='padding:1rem 0;'>Nothing coming up. Check back soon.</div>",
+            unsafe_allow_html=True,
+        )
 
-if past:
-    st.markdown("### Past")
-    for s in past[::-1][:10]:
-        _render(s)
+    if past:
+        st.markdown("### Past")
+        for s in past[::-1][:10]:
+            _render(s)
 
 brand_footer()
