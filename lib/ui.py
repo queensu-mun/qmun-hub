@@ -745,25 +745,43 @@ def tag(text: str, *, accent: bool = False) -> str:
 
 
 def top_nav(user) -> None:
-    """Single-bar nav: brand | page links | user chip — all on one row."""
+    """Single-bar nav with labelled group separators.
+
+    Layout: brand | Home | SEP(Prep) Brief Archive | SEP(Learn) Chatbot Training |
+            SEP(Team) Socials Scouting Contribute | SEP(Admin) Director | user
+    """
     initials = "".join(w[0].upper() for w in user.name.split()[:2]) if user.name else "?"
     first_name = user.name.split()[0] if user.name else user.name
 
-    pages = [
-        ("Home", "app.py"),
-        ("Brief", "pages/2_Brief.py"),
-        ("Archive", "pages/1_Archive.py"),
-        ("Chatbot", "pages/3_Chatbot.py"),
-        ("Training", "pages/4_Training.py"),
-        ("Contribute", "pages/6_Alumni_Interview.py"),
+    # Groups: (label_above_separator, [(nav_label, page_path), ...])
+    # None label = no separator before this group (first group)
+    groups = [
+        (None,   [("Home",      "app.py")]),
+        ("Prep", [("Brief",     "pages/2_Brief.py"),
+                  ("Archive",   "pages/1_Archive.py")]),
+        ("Learn",[("Chatbot",   "pages/3_Chatbot.py"),
+                  ("Training",  "pages/4_Training.py")]),
+        ("Team", [("Socials",   "pages/7_Socials.py"),
+                  ("Scouting",  "pages/8_Scouting.py"),
+                  ("Contribute","pages/6_Alumni_Interview.py")]),
     ]
     if user.is_exec:
-        pages.append(("Director", "pages/5_Director.py"))
+        groups.append(("Admin", [("Director", "pages/5_Director.py")]))
 
-    # One row: brand(2) | links(1 each) | user(2)
-    cols = st.columns([2] + [1] * len(pages) + [2])
+    LINK_W, SEP_W, BRAND_W, USER_W = 0.85, 0.32, 2.2, 2.2
 
-    with cols[0]:
+    widths = [BRAND_W]
+    for i, (grp_label, grp_pages) in enumerate(groups):
+        if i > 0:
+            widths.append(SEP_W)
+        widths.extend(LINK_W for _ in grp_pages)
+    widths.append(USER_W)
+
+    cols = st.columns(widths)
+    idx = 0
+
+    # Brand
+    with cols[idx]:
         st.markdown(
             f"<div class='qmun-brand-row' style='padding:0.3rem 0;'>"
             f"{qmun_logo(size=28)}"
@@ -771,14 +789,31 @@ def top_nav(user) -> None:
             f"</div>",
             unsafe_allow_html=True,
         )
+    idx += 1
 
-    for i, (label, path) in enumerate(pages):
-        with cols[1 + i]:
-            st.page_link(path, label=label)
+    # Groups
+    for i, (grp_label, grp_pages) in enumerate(groups):
+        if i > 0:
+            with cols[idx]:
+                st.markdown(
+                    f"<div style='display:flex;flex-direction:column;align-items:center;"
+                    f"justify-content:center;height:100%;min-height:38px;gap:3px;'>"
+                    f"<div style='font-size:0.52rem;color:var(--text-faint);text-transform:uppercase;"
+                    f"letter-spacing:0.1em;white-space:nowrap;'>{grp_label}</div>"
+                    f"<div style='width:1px;height:10px;background:var(--border-strong);'></div>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+            idx += 1
+        for nav_label, path in grp_pages:
+            with cols[idx]:
+                st.page_link(path, label=nav_label)
+            idx += 1
 
-    with cols[-1]:
+    # User chip + sign-out
+    with cols[idx]:
         st.markdown(
-            f"<div class='qmun-user-row' style='padding:0.2rem 0; gap:8px;'>"
+            f"<div class='qmun-user-row' style='padding:0.2rem 0;gap:8px;'>"
             f"<div class='qmun-user-info'>"
             f"<div class='qmun-user-name' style='font-size:0.82rem;'>{first_name}</div>"
             f"<div class='qmun-user-role'>{user.role.title()}</div>"
@@ -792,7 +827,6 @@ def top_nav(user) -> None:
             sign_out()
             st.rerun()
 
-    # 1px tricolor line as bottom border of the nav bar
     st.markdown(tricolor_bar(height=1), unsafe_allow_html=True)
     st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
 
