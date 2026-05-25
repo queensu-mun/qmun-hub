@@ -32,6 +32,50 @@ if stats["n_docs"] == 0:
     brand_footer()
     st.stop()
 
+
+def _meta_line(doc_type: str, year: int | None, quality: str | None, extra: str = "") -> str:
+    parts = [DOC_TYPE_DISPLAY.get(doc_type, doc_type)]
+    if year:
+        parts.append(str(year))
+    if quality == "exemplary":
+        parts.append("⭐ exemplary")
+    elif quality == "outdated":
+        parts.append("outdated")
+    if extra:
+        parts.append(extra)
+    return " · ".join(parts)
+
+
+# ---------------- Doc viewer (takes over the page when a doc is open) ----------------
+if "archive_open_doc" in st.session_state:
+    doc_id = st.session_state["archive_open_doc"]
+    doc_meta = next((d for d in list_docs() if d["doc_id"] == doc_id), None)
+    text = doc_text(doc_id)
+
+    if st.button("← Back to archive", key="archive_doc_back"):
+        if "archive_return_query" in st.session_state:
+            st.session_state["archive_seed_query"] = st.session_state.pop("archive_return_query")
+        st.session_state.pop("archive_open_doc", None)
+        st.rerun()
+
+    st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+
+    if doc_meta:
+        st.markdown(f"### {doc_meta['title']}")
+        st.caption(_meta_line(doc_meta["doc_type"], doc_meta["year"], doc_meta["quality_flag"]))
+        st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+
+    if text:
+        st.markdown(text[:80_000])
+        if len(text) > 80_000:
+            st.caption(f"_(truncated; full doc is {len(text):,} chars)_")
+    else:
+        st.warning("No text available for this document.")
+
+    brand_footer()
+    st.stop()
+
+
 # ---------------- Search bar (single line) ----------------
 seeded_query = st.session_state.pop("archive_seed_query", "")
 all_years = sorted({d["year"] for d in list_docs() if d["year"]}, reverse=True)
@@ -56,19 +100,6 @@ if seeded_query:
 st.markdown("<div style='height:1.5rem;'></div>", unsafe_allow_html=True)
 
 # ---------------- Results or default doc list ----------------
-def _meta_line(doc_type: str, year: int | None, quality: str | None, extra: str = "") -> str:
-    parts = [DOC_TYPE_DISPLAY.get(doc_type, doc_type)]
-    if year:
-        parts.append(str(year))
-    if quality == "exemplary":
-        parts.append("⭐ exemplary")
-    elif quality == "outdated":
-        parts.append("outdated")
-    if extra:
-        parts.append(extra)
-    return " · ".join(parts)
-
-
 if submitted and query:
     doc_type = DOC_TYPE_LABELS.get(doc_type_label)
     year = year_choice if isinstance(year_choice, int) else None
@@ -93,6 +124,8 @@ if submitted and query:
             with row[0]:
                 if st.button("Open", key=f"open_{h.chunk_id}"):
                     st.session_state["archive_open_doc"] = h.doc_id
+                    st.session_state["archive_return_query"] = query
+                    st.rerun()
             with row[1]:
                 if st.button("Ask mentor", key=f"ask_{h.chunk_id}"):
                     st.session_state["mentor_seed_question"] = (
@@ -122,20 +155,7 @@ else:
         with btn_col:
             if st.button("Open", key=f"recent_open_{d['doc_id']}", use_container_width=True):
                 st.session_state["archive_open_doc"] = d["doc_id"]
+                st.rerun()
         st.markdown("<hr style='margin: 0.75rem 0;'/>", unsafe_allow_html=True)
-
-# ---------------- Doc viewer ----------------
-if "archive_open_doc" in st.session_state:
-    st.divider()
-    doc_id = st.session_state["archive_open_doc"]
-    text = doc_text(doc_id)
-    if text:
-        if st.button("← Back to results"):
-            st.session_state.pop("archive_open_doc", None)
-            st.rerun()
-        st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
-        st.markdown(text[:80_000])
-        if len(text) > 80_000:
-            st.caption(f"_(truncated; full doc is {len(text):,} chars)_")
 
 brand_footer()
