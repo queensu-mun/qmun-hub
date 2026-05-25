@@ -1,7 +1,8 @@
 .streamlit/secrets.toml
 .env
 .env.local
-data/archive.db
+# archive.db is committed so deployed instances ship with seed embeddings.
+# Re-seed locally with `python3 scripts/seed_archive.py`, then commit + push.
 data/usage.db
 data/*.db-journal
 data/cache/
