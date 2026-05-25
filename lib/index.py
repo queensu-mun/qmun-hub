@@ -269,7 +269,7 @@ def list_docs() -> list[dict]:
     with _conn() as c:
         rows = c.execute(
             "SELECT d.doc_id, d.title, d.doc_type, d.year, d.visibility, d.quality_flag, "
-            "d.indexed_at, COUNT(c.chunk_id) "
+            "d.indexed_at, d.source, COUNT(c.chunk_id) "
             "FROM docs d LEFT JOIN chunks c ON c.doc_id = d.doc_id "
             "GROUP BY d.doc_id ORDER BY d.indexed_at DESC"
         ).fetchall()
@@ -277,7 +277,7 @@ def list_docs() -> list[dict]:
         {
             "doc_id": r[0], "title": r[1], "doc_type": r[2], "year": r[3],
             "visibility": r[4], "quality_flag": r[5],
-            "indexed_at": r[6], "chunk_count": r[7],
+            "indexed_at": r[6], "source": r[7], "chunk_count": r[8],
         }
         for r in rows
     ]

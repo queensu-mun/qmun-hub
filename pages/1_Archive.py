@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import streamlit as st
 
 from lib.auth import require_login
@@ -50,7 +52,6 @@ def _meta_line(doc_type: str, year: int | None, quality: str | None, extra: str 
 if "archive_open_doc" in st.session_state:
     doc_id = st.session_state["archive_open_doc"]
     doc_meta = next((d for d in list_docs() if d["doc_id"] == doc_id), None)
-    text = doc_text(doc_id)
 
     if st.button("← Back to archive", key="archive_doc_back"):
         if "archive_return_query" in st.session_state:
@@ -60,17 +61,49 @@ if "archive_open_doc" in st.session_state:
 
     st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
 
-    if doc_meta:
-        st.markdown(f"### {doc_meta['title']}")
-        st.caption(_meta_line(doc_meta["doc_type"], doc_meta["year"], doc_meta["quality_flag"]))
-        st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+    # Centered reading column so long-form text doesn't span the full page width.
+    _, mid, _ = st.columns([1, 5, 1])
+    with mid:
+        if doc_meta:
+            st.markdown(f"### {doc_meta['title']}")
+            st.caption(_meta_line(doc_meta["doc_type"], doc_meta["year"], doc_meta["quality_flag"]))
+            st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
 
-    if text:
-        st.markdown(text[:80_000])
-        if len(text) > 80_000:
-            st.caption(f"_(truncated; full doc is {len(text):,} chars)_")
-    else:
-        st.warning("No text available for this document.")
+        source = (doc_meta or {}).get("source", "") or ""
+        is_pdf = source.lower().endswith(".pdf")
+        pdf_path = Path(source) if is_pdf else None
+
+        if is_pdf and pdf_path and pdf_path.exists():
+            # PDFs render poorly as extracted text. Offer the original instead.
+            st.info(
+                "This is a PDF. The extracted text is searchable via the Archive search, "
+                "but for reading, download the original below."
+            )
+            with open(pdf_path, "rb") as f:
+                st.download_button(
+                    "⬇ Download original PDF",
+                    data=f.read(),
+                    file_name=pdf_path.name,
+                    mime="application/pdf",
+                    type="primary",
+                )
+            with st.expander("Show indexed text anyway"):
+                text = doc_text(doc_id)
+                if text:
+                    st.markdown(text[:80_000])
+                    if len(text) > 80_000:
+                        st.caption(f"_(truncated; full extracted text is {len(text):,} chars)_")
+                else:
+                    st.caption("No indexed text available.")
+        else:
+            # Markdown / text doc — render inline in the reading column.
+            text = doc_text(doc_id)
+            if text:
+                st.markdown(text[:80_000])
+                if len(text) > 80_000:
+                    st.caption(f"_(truncated; full doc is {len(text):,} chars)_")
+            else:
+                st.warning("No text available for this document.")
 
     brand_footer()
     st.stop()
