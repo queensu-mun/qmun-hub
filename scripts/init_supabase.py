@@ -84,8 +84,17 @@ def _migrate_archive(client) -> str:
     import numpy as np
 
     existing = client.table(index_lib.SB_DOCS).select("doc_id", count="exact").limit(1).execute()
-    if (existing.count or 0) > 0:
-        return f"archive already present remotely ({existing.count} docs, left untouched)"
+    n_docs_remote = existing.count or 0
+    n_chunks_remote = (
+        client.table(index_lib.SB_CHUNKS).select("chunk_id", count="exact").limit(1).execute().count or 0
+    )
+    if n_docs_remote > 0 and n_chunks_remote > 0:
+        return f"archive already present remotely ({n_docs_remote} docs / {n_chunks_remote} chunks, left untouched)"
+    if n_docs_remote > 0:
+        # Partial state (docs but no chunks, e.g. a prior run failed mid-insert).
+        # Wipe and re-migrate cleanly.
+        client.table(index_lib.SB_CHUNKS).delete().neq("chunk_id", "").execute()
+        client.table(index_lib.SB_DOCS).delete().neq("doc_id", "").execute()
 
     local = index_lib.DB_PATH
     if not local.exists():
@@ -105,9 +114,10 @@ def _migrate_archive(client) -> str:
     if not docs:
         return "local archive.db is empty, nothing to migrate"
 
+    pg_safe = index_lib.pg_safe
     client.table(index_lib.SB_DOCS).insert([
         {
-            "doc_id": d["doc_id"], "title": d["title"], "source": d["source"],
+            "doc_id": d["doc_id"], "title": pg_safe(d["title"]), "source": d["source"],
             "doc_type": d["doc_type"], "year": d["year"],
             "metadata": json.loads(d["metadata"]) if d["metadata"] else {},
             "indexed_at": d["indexed_at"], "visibility": d["visibility"],
@@ -119,7 +129,7 @@ def _migrate_archive(client) -> str:
     rows = [
         {
             "chunk_id": ch["chunk_id"], "doc_id": ch["doc_id"], "ord": ch["ord"],
-            "text": ch["text"], "token_estimate": ch["token_estimate"],
+            "text": pg_safe(ch["text"]), "token_estimate": ch["token_estimate"],
             "embedding": np.frombuffer(ch["embedding"], dtype=np.float32).tolist(),
         }
         for ch in chunks

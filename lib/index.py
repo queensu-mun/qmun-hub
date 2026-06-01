@@ -104,6 +104,12 @@ def _supabase() -> bool:
     return store.backend() == "supabase"
 
 
+def pg_safe(text: str) -> str:
+    """Strip NUL bytes. Postgres text/jsonb reject \\u0000 (SQLite tolerates it);
+    PDF text extraction occasionally emits them."""
+    return text.replace("\x00", "") if text else text
+
+
 def _sb_fetch_all(table: str, *, columns: str = "*", order: str | None = None) -> list[dict]:
     """Page through a table 1000 rows at a time (PostgREST's default cap)."""
     client = store._client()
@@ -246,7 +252,7 @@ def upsert_doc(doc: Doc) -> int:
         client.table(SB_CHUNKS).delete().eq("doc_id", doc.doc_id).execute()
         client.table(SB_DOCS).upsert(
             {
-                "doc_id": doc.doc_id, "title": doc.title, "source": doc.source,
+                "doc_id": doc.doc_id, "title": pg_safe(doc.title), "source": doc.source,
                 "doc_type": doc.doc_type, "year": doc.year, "metadata": doc.metadata,
                 "indexed_at": indexed_at, "visibility": doc.visibility,
                 "quality_flag": doc.quality_flag,
@@ -256,7 +262,7 @@ def upsert_doc(doc: Doc) -> int:
         rows = [
             {
                 "chunk_id": f"{doc.doc_id}::{i}", "doc_id": doc.doc_id, "ord": i,
-                "text": text, "token_estimate": _token_estimate(text),
+                "text": pg_safe(text), "token_estimate": _token_estimate(text),
                 "embedding": emb.tolist(),
             }
             for i, (text, emb) in enumerate(zip(chunks, embeddings))
