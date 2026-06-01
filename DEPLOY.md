@@ -76,12 +76,19 @@ service_role_key = "eyJ..."
 
 [app]
 # REQUIRED for a public deploy. Without this the app auto-logs everyone in as admin.
+# Names are matched case-insensitively against what the user types at sign-in.
+# Use real values only in the Streamlit Cloud Secrets panel / local secrets.toml,
+# NOT here — this file is committed to a public repo.
 pilot_passcode = "<long-hard-to-guess-string>"
-pilot_admin_names = ["Jack Guillemette"]
+pilot_admin_names = ["Director Name"]
 pilot_exec_names = ["Exec One", "Exec Two"]
 budget_monthly_usd_cap = 40.0
 budget_monthly_usd_warn = 35.0
 ```
+
+To add/remove admins or execs later, edit these lists in the Streamlit Cloud
+Secrets panel; saving auto-reboots the app. Keep local
+`.streamlit/secrets.toml` in sync.
 
 Leave out `[slack]` and `[google]` entirely — both are deferred, and the app
 degrades gracefully to the pilot gate when Slack OAuth isn't configured.
