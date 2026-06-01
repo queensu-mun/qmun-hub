@@ -1,30 +1,15 @@
-"""Per-user weekly token caps + global monthly USD cap, persisted in SQLite."""
+"""Per-user weekly token caps + global monthly USD cap.
+
+Usage rows are persisted through `lib.store` (local SQLite in dev, Supabase
+once configured). Aggregation is done in Python: the data volume is a team's
+worth of rows, so this stays simple and identical across both backends.
+"""
 from __future__ import annotations
 
-import sqlite3
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "usage.db"
-
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS usage (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ts TEXT NOT NULL,
-    user_slack_id TEXT NOT NULL,
-    feature TEXT NOT NULL,
-    model TEXT NOT NULL,
-    input_tokens INTEGER NOT NULL,
-    cached_input_tokens INTEGER NOT NULL,
-    cache_write_tokens INTEGER NOT NULL,
-    output_tokens INTEGER NOT NULL,
-    cost_usd REAL NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_usage_user_ts ON usage(user_slack_id, ts);
-CREATE INDEX IF NOT EXISTS idx_usage_ts ON usage(ts);
-"""
+from lib import store
 
 
 @dataclass
@@ -56,18 +41,6 @@ class MonthlyBudget:
     @property
     def should_block(self) -> bool:
         return self.spent_usd >= self.cap_usd
-
-
-@contextmanager
-def _conn():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        conn.executescript(SCHEMA)
-        yield conn
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def _settings() -> dict:
@@ -102,34 +75,33 @@ def record_call(
     cost_usd: float,
     model: str,
 ) -> None:
-    with _conn() as c:
-        c.execute(
-            "INSERT INTO usage (ts, user_slack_id, feature, model, input_tokens, "
-            "cached_input_tokens, cache_write_tokens, output_tokens, cost_usd) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                datetime.utcnow().isoformat(),
-                user_slack_id,
-                feature,
-                model,
-                input_tokens,
-                cached_input_tokens,
-                cache_write_tokens,
-                output_tokens,
-                cost_usd,
-            ),
-        )
+    store.insert_row(
+        "usage",
+        {
+            "ts": datetime.utcnow().isoformat(),
+            "user_slack_id": user_slack_id,
+            "feature": feature,
+            "model": model,
+            "input_tokens": input_tokens,
+            "cached_input_tokens": cached_input_tokens,
+            "cache_write_tokens": cache_write_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": cost_usd,
+        },
+    )
 
 
 def user_weekly(user_slack_id: str) -> UsageSnapshot:
     week_start = _week_start()
-    with _conn() as c:
-        rows = c.execute(
-            "SELECT feature, COUNT(*), COALESCE(SUM(cost_usd), 0) FROM usage "
-            "WHERE user_slack_id = ? AND ts >= ? GROUP BY feature",
-            (user_slack_id, week_start.isoformat()),
-        ).fetchall()
-    counts = {f: (n, c) for f, n, c in rows}
+    rows = store.select_rows(
+        "usage",
+        where_eq={"user_slack_id": user_slack_id},
+        since=("ts", week_start.isoformat()),
+    )
+    counts: dict[str, list] = {}
+    for r in rows:
+        n, c = counts.get(r["feature"], (0, 0.0))
+        counts[r["feature"]] = (n + 1, c + (r.get("cost_usd") or 0.0))
     chat = counts.get("chat_mentor", (0, 0))[0] + counts.get("chat_chair", (0, 0))[0]
     crisis = counts.get("chat_crisis", (0, 0))[0]
     briefs = counts.get("brief", (0, 0))[0]
@@ -163,11 +135,8 @@ def current_monthly() -> MonthlyBudget:
     days_in_month = (month_start.replace(month=month_start.month % 12 + 1, day=1) - month_start).days if month_start.month != 12 else 31
     days_elapsed = max(1, (now - month_start).days + 1)
 
-    with _conn() as c:
-        spent = c.execute(
-            "SELECT COALESCE(SUM(cost_usd), 0) FROM usage WHERE ts >= ?",
-            (month_start.isoformat(),),
-        ).fetchone()[0]
+    rows = store.select_rows("usage", since=("ts", month_start.isoformat()))
+    spent = sum((r.get("cost_usd") or 0.0) for r in rows)
 
     projected = spent / days_elapsed * days_in_month
     return MonthlyBudget(
@@ -182,10 +151,10 @@ def current_monthly() -> MonthlyBudget:
 def top_users(limit: int = 10) -> list[tuple[str, float, int]]:
     """Return [(user_slack_id, total_cost_usd, call_count), ...] for current month."""
     month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    with _conn() as c:
-        rows = c.execute(
-            "SELECT user_slack_id, COALESCE(SUM(cost_usd), 0), COUNT(*) FROM usage "
-            "WHERE ts >= ? GROUP BY user_slack_id ORDER BY 2 DESC LIMIT ?",
-            (month_start.isoformat(), limit),
-        ).fetchall()
-    return [(u, float(c), int(n)) for u, c, n in rows]
+    rows = store.select_rows("usage", since=("ts", month_start.isoformat()))
+    agg: dict[str, list] = {}
+    for r in rows:
+        c, n = agg.get(r["user_slack_id"], (0.0, 0))
+        agg[r["user_slack_id"]] = (c + (r.get("cost_usd") or 0.0), n + 1)
+    ranked = sorted(agg.items(), key=lambda kv: kv[1][0], reverse=True)[:limit]
+    return [(u, float(c), int(n)) for u, (c, n) in ranked]

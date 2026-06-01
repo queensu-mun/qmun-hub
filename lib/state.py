@@ -1,17 +1,17 @@
-"""Local team state: weekly topics, conferences, assignments, roster, feedback.
+"""Team state: weekly topics, conferences, assignments, roster, feedback.
 
-Persisted to data/state.json. Director admin reads/writes this.
+Persisted through `lib.store`, which is local SQLite in dev and Supabase once
+configured. Director admin reads/writes this. The whole state is one JSON blob;
+all the helpers below load it, mutate, and save it back via the `edit()` cm.
 """
 from __future__ import annotations
 
-import json
 import uuid
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from pathlib import Path
 
-STATE_PATH = Path(__file__).resolve().parent.parent / "data" / "state.json"
+from lib import store
 
 
 @dataclass
@@ -164,15 +164,15 @@ def assignments_for_delegate(delegate_name: str) -> list[dict]:
 
 
 def load() -> dict:
-    if not STATE_PATH.exists():
-        STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        STATE_PATH.write_text(json.dumps(_default_state(), indent=2))
-    return json.loads(STATE_PATH.read_text())
+    state = store.load_state()
+    if state is None:
+        state = _default_state()
+        store.save_state(state)
+    return state
 
 
 def save(state: dict) -> None:
-    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(state, indent=2))
+    store.save_state(state)
 
 
 @contextmanager
@@ -331,15 +331,17 @@ def update_social(social_id: str, **fields) -> None:
 
 
 def remove_social(social_id: str) -> None:
+    removed_attachments: list[dict] = []
     with edit() as state:
         _normalize_state(state)
+        for entry in state["socials"]:
+            if entry["id"] == social_id:
+                removed_attachments = list(entry.get("attachments") or [])
+                break
         state["socials"] = [s for s in state["socials"] if s["id"] != social_id]
     # also nuke any uploaded files for this social
-    upload_dir = SOCIAL_UPLOAD_ROOT / social_id
-    if upload_dir.exists():
-        for f in upload_dir.iterdir():
-            f.unlink(missing_ok=True)
-        upload_dir.rmdir()
+    for att in removed_attachments:
+        store.delete_upload(_attachment_storage_key(att))
 
 
 def list_socials() -> list[dict]:
@@ -356,13 +358,25 @@ def upcoming_socials(limit: int = 3) -> list[dict]:
     return rows[:limit]
 
 
-SOCIAL_UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "data" / "uploads" / "socials"
-
-
 def _safe_filename(name: str) -> str:
     """Strip path separators and unsafe chars from a user-supplied filename."""
     name = name.replace("\\", "/").rsplit("/", 1)[-1]
     return "".join(c for c in name if c.isalnum() or c in ("-", "_", ".", " ")).strip() or "file"
+
+
+def _attachment_storage_key(att: dict) -> str:
+    """Stable deletion handle for an attachment.
+
+    New attachments carry an explicit `storage_key`. Legacy attachments (saved
+    before the store layer) only have a local `stored_path`; derive a relative
+    key from it so local deletion still works.
+    """
+    if att.get("storage_key"):
+        return att["storage_key"]
+    stored = att.get("stored_path", "")
+    marker = "uploads/"
+    idx = stored.replace("\\", "/").find(marker)
+    return stored.replace("\\", "/")[idx + len(marker):] if idx != -1 else ""
 
 
 def add_social_attachment(
@@ -373,26 +387,33 @@ def add_social_attachment(
     mime_type: str | None,
     uploaded_by: str | None = None,
 ) -> dict:
-    """Save a file under data/uploads/socials/{social_id}/ and append to the social's attachments."""
+    """Store a file via the store layer and append it to the social's attachments."""
     safe = _safe_filename(filename)
-    target_dir = SOCIAL_UPLOAD_ROOT / social_id
-    target_dir.mkdir(parents=True, exist_ok=True)
 
-    target_path = target_dir / safe
-    if target_path.exists():
-        # don't overwrite, suffix with a counter
-        stem = target_path.stem
-        ext = target_path.suffix
+    # De-dupe against this social's existing attachment names (no filesystem
+    # probing, so it works the same in local and Supabase modes).
+    existing = set()
+    s = load()
+    for entry in s.get("socials", []):
+        if entry["id"] == social_id:
+            existing = {a.get("filename") for a in (entry.get("attachments") or [])}
+            break
+    name = safe
+    if name in existing:
+        stem, _, ext = safe.rpartition(".")
+        base, suffix = (stem, "." + ext) if stem else (safe, "")
         n = 1
-        while target_path.exists():
-            target_path = target_dir / f"{stem}_{n}{ext}"
+        while name in existing:
+            name = f"{base}_{n}{suffix}"
             n += 1
 
-    target_path.write_bytes(data)
+    rel_key = f"socials/{social_id}/{name}"
+    stored = store.save_upload(rel_key, data, mime_type)
 
     attachment = {
-        "filename": target_path.name,
-        "stored_path": str(target_path),
+        "filename": name,
+        "stored_path": stored["stored_path"],
+        "storage_key": stored["storage_key"],
         "mime_type": mime_type or "application/octet-stream",
         "size_bytes": len(data),
         "uploaded_by": uploaded_by,
@@ -407,7 +428,7 @@ def add_social_attachment(
                 return attachment
 
     # social not found, clean up the orphan file
-    target_path.unlink(missing_ok=True)
+    store.delete_upload(rel_key)
     raise ValueError(f"Social {social_id} not found")
 
 
@@ -420,7 +441,7 @@ def remove_social_attachment(social_id: str, filename: str) -> None:
                 kept = []
                 for att in entry.get("attachments") or []:
                     if att["filename"] == filename:
-                        Path(att["stored_path"]).unlink(missing_ok=True)
+                        store.delete_upload(_attachment_storage_key(att))
                     else:
                         kept.append(att)
                 entry["attachments"] = kept
