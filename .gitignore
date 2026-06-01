@@ -18,3 +18,4 @@ venv/
 .idea/
 .vscode/
 *.log
+.qmun-hub.pid

@@ -22,10 +22,16 @@ from typing import Iterable
 import numpy as np
 import voyageai
 
+from lib import store
+
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT / "data" / "archive.db"
 EMBED_MODEL = "voyage-3"
 EMBED_DIM = 1024
+
+# Postgres table names in Supabase mode (see scripts/supabase_schema.sql).
+SB_DOCS = "archive_docs"
+SB_CHUNKS = "archive_chunks"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS docs (
@@ -85,6 +91,33 @@ def _conn():
         conn.commit()
     finally:
         conn.close()
+
+
+# --------------------------- Supabase backend ---------------------------
+# In Supabase mode the archive lives in Postgres so docs indexed after deploy
+# (alumni interviews, director uploads) survive the ephemeral filesystem.
+# Embeddings are stored as jsonb float arrays; search is still the in-memory
+# hybrid (BM25 + numpy cosine) in lib/search.py, so pgvector is unnecessary at
+# this scale and would not help the keyword half of the fusion anyway.
+
+def _supabase() -> bool:
+    return store.backend() == "supabase"
+
+
+def _sb_fetch_all(table: str, *, columns: str = "*", order: str | None = None) -> list[dict]:
+    """Page through a table 1000 rows at a time (PostgREST's default cap)."""
+    client = store._client()
+    rows: list[dict] = []
+    start, step = 0, 1000
+    while True:
+        q = client.table(table).select(columns)
+        if order:
+            q = q.order(order)
+        batch = q.range(start, start + step - 1).execute().data or []
+        rows.extend(batch)
+        if len(batch) < step:
+            return rows
+        start += step
 
 
 @lru_cache(maxsize=1)
@@ -205,6 +238,32 @@ def upsert_doc(doc: Doc) -> int:
     if not chunks:
         return 0
     embeddings, _tokens = embed_batch(chunks, input_type="document")
+    indexed_at = datetime.utcnow().isoformat()
+
+    if _supabase():
+        client = store._client()
+        # Re-index = replace: drop old chunks, upsert the doc, insert fresh chunks.
+        client.table(SB_CHUNKS).delete().eq("doc_id", doc.doc_id).execute()
+        client.table(SB_DOCS).upsert(
+            {
+                "doc_id": doc.doc_id, "title": doc.title, "source": doc.source,
+                "doc_type": doc.doc_type, "year": doc.year, "metadata": doc.metadata,
+                "indexed_at": indexed_at, "visibility": doc.visibility,
+                "quality_flag": doc.quality_flag,
+            },
+            on_conflict="doc_id",
+        ).execute()
+        rows = [
+            {
+                "chunk_id": f"{doc.doc_id}::{i}", "doc_id": doc.doc_id, "ord": i,
+                "text": text, "token_estimate": _token_estimate(text),
+                "embedding": emb.tolist(),
+            }
+            for i, (text, emb) in enumerate(zip(chunks, embeddings))
+        ]
+        for j in range(0, len(rows), 200):  # keep request payloads modest
+            client.table(SB_CHUNKS).insert(rows[j : j + 200]).execute()
+        return len(chunks)
 
     with _conn() as c:
         c.execute("DELETE FROM chunks WHERE doc_id = ?", (doc.doc_id,))
@@ -214,7 +273,7 @@ def upsert_doc(doc: Doc) -> int:
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 doc.doc_id, doc.title, doc.source, doc.doc_type, doc.year,
-                json.dumps(doc.metadata), datetime.utcnow().isoformat(),
+                json.dumps(doc.metadata), indexed_at,
                 doc.visibility, doc.quality_flag,
             ),
         )
@@ -247,6 +306,22 @@ class IndexedChunk:
 
 
 def load_all_chunks() -> list[IndexedChunk]:
+    if _supabase():
+        docs = {d["doc_id"]: d for d in _sb_fetch_all(SB_DOCS)}
+        out: list[IndexedChunk] = []
+        for r in _sb_fetch_all(SB_CHUNKS):
+            d = docs.get(r["doc_id"])
+            if not d:
+                continue
+            out.append(IndexedChunk(
+                chunk_id=r["chunk_id"], doc_id=r["doc_id"], ord=r["ord"], text=r["text"],
+                embedding=np.array(r["embedding"], dtype=np.float32),
+                doc_title=d["title"], doc_type=d["doc_type"], year=d.get("year"),
+                visibility=d.get("visibility", "team"), quality_flag=d.get("quality_flag"),
+                metadata=d.get("metadata") or {},
+            ))
+        return out
+
     with _conn() as c:
         rows = c.execute(
             "SELECT c.chunk_id, c.doc_id, c.ord, c.text, c.embedding, "
@@ -266,6 +341,22 @@ def load_all_chunks() -> list[IndexedChunk]:
 
 
 def list_docs() -> list[dict]:
+    if _supabase():
+        from collections import Counter
+
+        counts = Counter(r["doc_id"] for r in _sb_fetch_all(SB_CHUNKS, columns="doc_id"))
+        docs = _sb_fetch_all(SB_DOCS)
+        docs.sort(key=lambda d: d.get("indexed_at") or "", reverse=True)
+        return [
+            {
+                "doc_id": d["doc_id"], "title": d["title"], "doc_type": d["doc_type"],
+                "year": d.get("year"), "visibility": d.get("visibility", "team"),
+                "quality_flag": d.get("quality_flag"), "indexed_at": d.get("indexed_at"),
+                "source": d.get("source"), "chunk_count": counts.get(d["doc_id"], 0),
+            }
+            for d in docs
+        ]
+
     with _conn() as c:
         rows = c.execute(
             "SELECT d.doc_id, d.title, d.doc_type, d.year, d.visibility, d.quality_flag, "
@@ -285,6 +376,13 @@ def list_docs() -> list[dict]:
 
 def doc_text(doc_id: str) -> str | None:
     """Reassemble the full text of a doc from its chunks (for inline view)."""
+    if _supabase():
+        rows = (
+            store._client().table(SB_CHUNKS)
+            .select("text").eq("doc_id", doc_id).order("ord").execute().data or []
+        )
+        return "\n\n".join(r["text"] for r in rows) if rows else None
+
     with _conn() as c:
         rows = c.execute(
             "SELECT text FROM chunks WHERE doc_id = ? ORDER BY ord", (doc_id,)
@@ -295,12 +393,45 @@ def doc_text(doc_id: str) -> str | None:
 
 
 def delete_doc(doc_id: str) -> None:
+    if _supabase():
+        client = store._client()
+        client.table(SB_CHUNKS).delete().eq("doc_id", doc_id).execute()
+        client.table(SB_DOCS).delete().eq("doc_id", doc_id).execute()
+        return
     with _conn() as c:
         c.execute("DELETE FROM chunks WHERE doc_id = ?", (doc_id,))
         c.execute("DELETE FROM docs WHERE doc_id = ?", (doc_id,))
 
 
+def update_doc_curation(doc_id: str, *, quality_flag: str | None, visibility: str) -> None:
+    """Update a doc's quality flag + visibility (the Director curation controls)."""
+    if _supabase():
+        store._client().table(SB_DOCS).update(
+            {"quality_flag": quality_flag, "visibility": visibility}
+        ).eq("doc_id", doc_id).execute()
+        return
+    with _conn() as c:
+        c.execute(
+            "UPDATE docs SET quality_flag = ?, visibility = ? WHERE doc_id = ?",
+            (quality_flag, visibility, doc_id),
+        )
+
+
 def index_stats() -> dict:
+    if _supabase():
+        from collections import Counter
+
+        docs = _sb_fetch_all(SB_DOCS, columns="doc_type")
+        n_chunks = (
+            store._client().table(SB_CHUNKS)
+            .select("chunk_id", count="exact").limit(1).execute().count or 0
+        )
+        return {
+            "n_docs": len(docs),
+            "n_chunks": n_chunks,
+            "by_type": dict(Counter(d["doc_type"] for d in docs)),
+        }
+
     with _conn() as c:
         n_docs = c.execute("SELECT COUNT(*) FROM docs").fetchone()[0]
         n_chunks = c.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]

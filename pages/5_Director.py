@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sqlite3
 import uuid
 from datetime import date, datetime
 
@@ -10,7 +9,7 @@ import streamlit as st
 from lib import analyze, state as state_lib
 from lib.auth import require_exec
 from lib.budget import current_monthly, top_users
-from lib.index import DB_PATH as INDEX_DB, list_docs
+from lib.index import list_docs
 from lib.search import clear_cache as clear_search_cache
 from lib.ui import brand_footer, inject_global_css, page_header, tag, top_nav
 
@@ -773,11 +772,10 @@ with tabs[6]:
                     label_visibility="collapsed",
                 )
                 if cols[3].button("Save", key=f"curate_{d['doc_id']}"):
-                    with sqlite3.connect(INDEX_DB) as c:
-                        c.execute(
-                            "UPDATE docs SET quality_flag = ?, visibility = ? WHERE doc_id = ?",
-                            (quality or None, visibility, d["doc_id"]),
-                        )
+                    from lib.index import update_doc_curation
+                    update_doc_curation(
+                        d["doc_id"], quality_flag=quality or None, visibility=visibility
+                    )
                     clear_search_cache()
                     st.success("Saved.")
                     st.rerun()

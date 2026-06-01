@@ -39,3 +39,31 @@ create table if not exists briefs (
     created_at text not null
 );
 create index if not exists idx_briefs_created on briefs (created_at);
+
+-- archive_docs / archive_chunks : the searchable knowledge base (lib/index.py).
+-- Committed archive.db seeds local dev; in Supabase mode these tables hold the
+-- archive so docs indexed after deploy (alumni interviews, director uploads)
+-- survive redeploys. Embeddings are stored as jsonb float arrays; similarity is
+-- computed in-memory (numpy) alongside BM25, so no pgvector extension is needed.
+
+create table if not exists archive_docs (
+    doc_id       text primary key,
+    title        text not null,
+    source       text not null,
+    doc_type     text not null,
+    year         integer,
+    metadata     jsonb not null default '{}'::jsonb,
+    indexed_at   text not null,
+    visibility   text not null default 'team',
+    quality_flag text
+);
+
+create table if not exists archive_chunks (
+    chunk_id       text primary key,
+    doc_id         text not null references archive_docs (doc_id) on delete cascade,
+    ord            integer not null,
+    text           text not null,
+    token_estimate integer not null,
+    embedding      jsonb not null
+);
+create index if not exists idx_archive_chunks_doc on archive_chunks (doc_id);
