@@ -67,3 +67,15 @@ create table if not exists archive_chunks (
     embedding      jsonb not null
 );
 create index if not exists idx_archive_chunks_doc on archive_chunks (doc_id);
+
+-- Row Level Security: enable on every table, add NO policies.
+-- The app connects with the service_role key, which BYPASSES RLS, so this does
+-- not affect the app at all. With no policies, the public `anon` role (the
+-- auto-exposed REST API anyone could hit with the publishable anon key) is denied
+-- all access. This seals the tables against direct API reads/writes that would
+-- otherwise bypass the app's pilot-passcode gate. Re-running is harmless.
+alter table team_state     enable row level security;
+alter table usage          enable row level security;
+alter table briefs         enable row level security;
+alter table archive_docs   enable row level security;
+alter table archive_chunks enable row level security;
