@@ -5,14 +5,20 @@ into the archive (`alumni_interview` doc type). The Mentor chatbot cites
 these by name; Archive search returns them on relevant queries.
 
 Design principles for the questions:
-- Force specifics. "What's a moment when..." beats "Describe the team."
+- Low barrier first. The form opens with a short core of a few story-shaped
+  questions. Everything past your name is optional. The goal is that a busy
+  alum can finish in two minutes and still leave something useful behind.
+- Depth is opt-in. The longer, experience-specific questions live behind a
+  "Go deeper" section for the alumni who want to give more.
 - Reward anecdotes. Story-shaped answers retrieve better and the chatbot
   can cite them by name.
 - Skippable by experience. GA-only and Crisis-only sections so any one
   alum doesn't see questions outside their experience.
-- ~20 minutes total if written substantively. Bullet-point answers fine.
 
-Stub for May scaffolding. Full submit() implementation in Phase 3 (July).
+Each section carries a `tier`: "core" sections render up front and open;
+"deep" sections render collapsed inside the optional "Go deeper" group.
+`INTERVIEW_SECTIONS` stays the single source of truth so the submit/compose
+loop in the page works unchanged.
 """
 from __future__ import annotations
 
@@ -21,39 +27,56 @@ from dataclasses import dataclass
 INTERVIEW_SECTIONS = [
     {
         "id": "context",
-        "title": "Quick context",
+        "tier": "core",
+        "title": "A little about you",
         "questions": [
-            "How many years were you on the team, and what roles did you hold? "
-            "(e.g. delegate, exec, director, social chair)",
-            "Which committee types did you do most? (GA, Specialized Agency, Crisis, UNSC, mix)",
-            "Which conferences did you attend, and any awards or honors picked up? "
-            "(e.g. \"NCSC LIII fall 2025, UNSC Cambodia, Verbal Commendation\")",
+            "How long were you on the team and what did you get up to? "
+            "Roles, committee types, conferences, any awards you want to mention. "
+            "One line is plenty.",
         ],
     },
     {
         "id": "sticky_note",
+        "tier": "core",
         "title": "The sticky-note advice",
         "questions": [
             "If you could give a Queen's MUN delegate ONE piece of advice "
-            "and it had to fit on a sticky note, what would it be, and why? "
-            "Be specific. Generic advice is useless to a first-timer.",
+            "and it had to fit on a sticky note, what would it be?",
+        ],
+    },
+    {
+        "id": "moment",
+        "tier": "core",
+        "title": "A moment that stuck",
+        "questions": [
+            "Tell us about one committee moment you still remember. A win, a disaster, "
+            "a turning point, a room that went sideways. Whatever comes to mind first.",
+        ],
+    },
+    {
+        "id": "recurring",
+        "tier": "core",
+        "title": "What we keep getting wrong",
+        "questions": [
+            "What do Queen's delegates keep getting wrong, year after year? "
+            "Be honest. This is the most useful thing you can give us, because it "
+            "tells us what to drill in training.",
         ],
     },
     {
         "id": "tactical",
+        "tier": "deep",
         "title": "Tactical wisdom",
         "questions": [
             "What's the single most useful thing you do in committee that you didn't "
             "learn from the Art of MUN handbook? Where did you pick it up?",
             "Tell us about a specific moment when your committee strategy fell apart "
             "and how you recovered. What was the trigger, what did you change, what happened?",
-            "What do Queen's delegates collectively keep getting wrong, year after year? "
-            "Be honest. This is the most valuable thing you can give us, because it "
-            "tells us what to drill in training.",
         ],
     },
     {
         "id": "first_timer",
+        "tier": "deep",
         "title": "For first-timers (this becomes Mentor chatbot context)",
         "questions": [
             "What would you tell yourself the night before your very first conference? "
@@ -66,6 +89,7 @@ INTERVIEW_SECTIONS = [
     },
     {
         "id": "ga",
+        "tier": "deep",
         "title": "GA / SA delegates only (skip if mostly crisis)",
         "questions": [
             "Tell us about a specific moment where bloc dynamics decided the outcome. "
@@ -76,6 +100,7 @@ INTERVIEW_SECTIONS = [
     },
     {
         "id": "crisis",
+        "tier": "deep",
         "title": "Crisis delegates only (skip if mostly GA)",
         "questions": [
             "Walk us through a personal arc that actually worked. What was your character's "
@@ -88,6 +113,7 @@ INTERVIEW_SECTIONS = [
     },
     {
         "id": "conferences",
+        "tier": "deep",
         "title": "Conference-specific intel",
         "questions": [
             "For each major conference you attended, give us a short paragraph on: "
@@ -98,6 +124,7 @@ INTERVIEW_SECTIONS = [
     },
     {
         "id": "open",
+        "tier": "deep",
         "title": "Anything else",
         "questions": [
             "What didn't we ask that we should have? What knowledge are you taking with "
@@ -107,6 +134,16 @@ INTERVIEW_SECTIONS = [
         ],
     },
 ]
+
+
+def core_sections() -> list[dict]:
+    """Short, low-barrier questions shown up front."""
+    return [s for s in INTERVIEW_SECTIONS if s.get("tier", "deep") == "core"]
+
+
+def deep_sections() -> list[dict]:
+    """Longer, experience-specific questions shown behind 'Go deeper'."""
+    return [s for s in INTERVIEW_SECTIONS if s.get("tier", "deep") == "deep"]
 
 
 @dataclass

@@ -30,16 +30,7 @@ Most chairs evaluate on roughly four axes, weighted differently by conference st
 
 ## Conference-specific weighting
 
-| Conference | Substance | Diplomacy | Procedure | Presence | Notes |
-|---|---|---|---|---|---|
-| **HMUN** (Harvard) | High | Medium | Medium | High | GA committees enormous; presence helps you stand out in a crowded room |
-| **NMUN-DC** | High | High | Medium | Medium | Strong consensus emphasis; flashy delegates can come off as disruptive |
-| **UPenn ILMUNC** | High | Medium | High | Medium | Crisis side rewards creative directives; GA side rewards substance |
-| **NCSC** (DC) | Very high | Medium | High | Medium | Security focus, crisis-heavy, chairs are content experts |
-| **McGill SSUNS** | High | High | Medium | Medium | Smaller, more collaborative culture |
-| **Yale MUN (YMUN/SCSY)** | High | High | High | High | Polished delegate base, hard to break through without all four |
-| **CHOMUN** (Chicago) | High | Medium | Medium | High | Strong crisis program rewards creativity |
-| **Queen's MUNiverse** | Home turf | — | — | — | Different incentives; you're hosting |
+The mix of these four axes shifts from conference to conference, and from committee to committee within the same conference. Large GA committees tend to reward presence and the ability to stand out in a crowded room; small specialized agencies and crisis committees lean harder on substance and procedure; consensus-heavy circuits can penalize a delegate who reads as disruptive. There is no reliable published table for this. The only trustworthy read on how a specific conference grades is first-hand intel from delegates who have competed there. That intel lives in the alumni interviews in this archive, and it is worth far more than any general rubric. When you are prepping for a specific conference, search the archive for it and read what people who were in the room actually said.
 
 ## Award tiers
 

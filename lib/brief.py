@@ -155,6 +155,26 @@ def _scrub_em_dashes(text: str) -> str:
     return text
 
 
+def _alumni_brief_context(query: str, max_passages: int = 2) -> str:
+    """Pull relevant alumni-interview wisdom for the committee/topic. Backend-only
+    (these docs aren't browsable in the Archive) but they sharpen the brief."""
+    if not query.strip():
+        return ""
+    try:
+        from lib.search import retrieve_passages
+        passages = retrieve_passages(query, doc_types=["alumni_interview"], top_k=max_passages)
+    except Exception:
+        return ""
+    if not passages:
+        return ""
+    blocks = [f'From "{p.doc_title}":\n{p.text.strip()}' for p in passages]
+    return (
+        "\n\n--- INSTITUTIONAL KNOWLEDGE (what Queen's alumni have shared about committees "
+        "like this; weave in any relevant tactical or conference-specific insight) ---\n"
+        + "\n\n".join(blocks)
+    )
+
+
 def _build_user_message(req: BriefRequest) -> str:
     parts = [
         f"**Country / Character:** {req.country}",
@@ -164,7 +184,9 @@ def _build_user_message(req: BriefRequest) -> str:
     if req.notes:
         parts.append(f"**Director / delegate notes:** {req.notes}")
     parts.append("\nGenerate the brief.")
-    return "\n".join(parts)
+    msg = "\n".join(parts)
+    alumni = _alumni_brief_context(f"{req.committee} {req.topic}")
+    return msg + alumni
 
 
 def generate(req: BriefRequest, *, force_refresh: bool = False) -> Brief:

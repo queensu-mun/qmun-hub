@@ -52,9 +52,9 @@ This is not just a writing framework. It is a research checklist. You are not do
 
 Weak prep: "France supports climate action and human rights."
 
-Strong prep: "France co-sponsored Resolution 75/219 on climate and security in 2020, abstained on 76/300 citing sovereignty concerns, and has been pushing for an advisory opinion from the ICJ since 2022. Their position is shaped by their permanent seat ambitions and their overseas territory exposure to sea-level rise."
+Strong prep: "France co-sponsored the most recent General Assembly resolution on climate and security [look up the actual number], abstained on a related vote citing sovereignty concerns [find which, and the year], and has been pushing for an ICJ advisory opinion. Their position is shaped by their permanent Security Council seat and their overseas territory exposure to sea-level rise."
 
-The difference is specifics. Chairs can tell. The delegate who can cite a resolution number and explain the abstention is the delegate who wins.
+The difference is specifics. Chairs can tell. The delegate who can cite a real resolution number and explain the abstention is the delegate who wins. Do not invent resolution numbers to sound prepared. Chairs catch fabricated citations, and it costs you more than admitting you do not know. Pull the real numbers from the UN Digital Library before you walk in.
 
 ## Common research mistakes
 

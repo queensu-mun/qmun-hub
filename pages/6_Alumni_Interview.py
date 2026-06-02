@@ -8,7 +8,7 @@ from datetime import datetime
 import streamlit as st
 
 from lib.index import Doc, upsert_doc
-from lib.interview import INTERVIEW_SECTIONS
+from lib.interview import INTERVIEW_SECTIONS, core_sections, deep_sections
 from lib.search import clear_cache as clear_search_cache
 from lib.auth import current_user
 from lib.ui import brand_footer, inject_global_css, page_header, top_nav
@@ -33,8 +33,10 @@ with st.container(border=True):
         grad_year = st.number_input("Graduation year", min_value=2010, max_value=2035, value=2026, step=1)
 
 st.caption(
-    "Skip whatever doesn't apply. Bullet points are fine. War stories are better. "
-    "Whatever you write goes into the team's searchable archive."
+    "Answer as much or as little as you like. Everything past your name is optional, "
+    "and even one answer is worth leaving behind. Bullet points are fine. War stories "
+    "are better. Your answers aren't posted publicly. They quietly coach current "
+    "delegates through the mentor chatbot and prep tools, so be candid."
 )
 
 # Initialize response state
@@ -42,19 +44,35 @@ if "interview_responses" not in st.session_state:
     st.session_state["interview_responses"] = {}
 responses = st.session_state["interview_responses"]
 
-for section in INTERVIEW_SECTIONS:
-    with st.expander(section["title"], expanded=False):
-        if section.get("per_conference"):
-            st.caption("Answer this section once per conference you attended. Add as many as you want.")
+
+def _render_question(section: dict, q: str) -> None:
+    key = f"{section['id']}::{q[:60]}"
+    responses[key] = st.text_area(
+        q,
+        value=responses.get(key, ""),
+        height=110,
+        key=f"input_{key}",
+        label_visibility="visible",
+    )
+
+
+# Core: short, low-barrier, shown up front.
+for section in core_sections():
+    st.markdown(f"#### {section['title']}")
+    for q in section["questions"]:
+        _render_question(section, q)
+
+# Deep: longer, experience-specific, opt-in.
+st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
+with st.expander("Go deeper (optional)", expanded=False):
+    st.caption(
+        "For the alumni who want to give more. Tactical lessons, GA and crisis "
+        "specifics, conference-by-conference intel. Skip anything that doesn't apply."
+    )
+    for section in deep_sections():
+        st.markdown(f"**{section['title']}**")
         for q in section["questions"]:
-            key = f"{section['id']}::{q[:60]}"
-            responses[key] = st.text_area(
-                q,
-                value=responses.get(key, ""),
-                height=110,
-                key=f"input_{key}",
-                label_visibility="visible",
-            )
+            _render_question(section, q)
 
 st.divider()
 
@@ -116,7 +134,10 @@ if submit:
         with st.spinner("Saving and indexing your interview..."):
             n = upsert_doc(doc)
         clear_search_cache()
-        st.success(f"Submitted. Indexed into {n} chunks. Thank you for the institutional knowledge.")
+        st.success(
+            "Submitted. Thank you, this will quietly help coach future Queen's delegates "
+            "through the mentor and prep tools."
+        )
         st.session_state["interview_responses"] = {}
 
 brand_footer()

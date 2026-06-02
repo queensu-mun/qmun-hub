@@ -6,9 +6,11 @@ from pathlib import Path
 import streamlit as st
 
 from lib import state as state_lib
+from lib import tour
 from lib.auth import require_login
 from lib.cache import recent as recent_briefs
-from lib.ui import brand_footer, inject_global_css, top_nav
+from lib.icons import HERO_SVG, globe
+from lib.ui import brand_footer, empty_state, inject_global_css, top_nav
 
 ROOT = Path(__file__).resolve().parent
 HERO_PHOTO = ROOT / "assets" / "hero.jpg"
@@ -23,6 +25,9 @@ st.set_page_config(
 
 inject_global_css()
 user = require_login()
+# First-time delegate walkthrough: arm it before top_nav so the tour banner
+# (rendered inside top_nav) shows on this first load.
+tour.maybe_autostart(user)
 top_nav(user)
 
 state = state_lib.load()
@@ -119,9 +124,9 @@ with hero_right:
         st.image(str(HERO_PHOTO), use_container_width=True)
     else:
         st.markdown(
-            """
+            f"""
 <div class='hero-panel'>
-  <div class='hero-panel-mark'>QM</div>
+  <div class='hero-panel-art'>{HERO_SVG}</div>
   <div class='hero-panel-title'>Queen's<br/>Model UN</div>
   <div class='hero-panel-meta'>2026 / 2027 · Team Workspace</div>
   <div class='hero-panel-tricolor'>
@@ -164,6 +169,10 @@ with hero_left:
     with a3:
         if st.button("Training guides", use_container_width=True):
             st.switch_page("pages/4_Training.py")
+
+    if st.button("Take a quick tour", key="start_tour"):
+        tour.start()
+        st.rerun()
 
 st.markdown("<div style='height:2.5rem;'></div>", unsafe_allow_html=True)
 
@@ -313,5 +322,26 @@ if briefs:
 """,
             unsafe_allow_html=True,
         )
+
+# ---------------- Team moments (photo strip) ----------------
+GALLERY = [ROOT / "assets" / "gallery" / f"g{i}.jpg" for i in (1, 2, 3, 4)]
+gallery_imgs = [p for p in GALLERY if p.exists()]
+if gallery_imgs:
+    st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-head'><h3>On the circuit</h3></div>", unsafe_allow_html=True)
+    gcols = st.columns(len(gallery_imgs), gap="small")
+    for col, img in zip(gcols, gallery_imgs):
+        col.image(str(img), use_container_width=True)
+
+# ---------------- Empty state (nothing scheduled yet) ----------------
+if not (my_assignments or mon or thu or upcoming or briefs):
+    st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+    empty_state(
+        icon_svg=globe(size=32),
+        title="Nothing scheduled yet",
+        blurb="Generate a brief, ask the mentor a question, or browse the training "
+              "guides to get started. Weekly mocks and assignments will show up here "
+              "once the director sets them.",
+    )
 
 brand_footer()

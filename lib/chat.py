@@ -215,6 +215,51 @@ def _scrub(text: str) -> str:
     return text.replace(" — ", ", ").replace(" – ", ", ").replace("—", "-").replace("–", "-")
 
 
+def _alumni_context(query: str, max_passages: int = 3) -> str:
+    """Retrieve relevant alumni-interview passages to ground the mentor's advice.
+
+    Backend-only: alumni interviews are not browsable in the Archive, but their
+    wisdom feeds the mentor here.
+    """
+    if not query:
+        return ""
+    try:
+        from lib.search import retrieve_passages
+        passages = retrieve_passages(query, doc_types=["alumni_interview"], top_k=max_passages)
+    except Exception:
+        return ""
+    if not passages:
+        return ""
+    blocks = [f'From "{p.doc_title}":\n{p.text.strip()}' for p in passages]
+    return (
+        "\n\n--- WHAT QUEEN'S ALUMNI HAVE SHARED (institutional knowledge; draw on it "
+        "and attribute the person when you lean on a specific story or claim) ---\n"
+        + "\n\n".join(blocks)
+        + "\n--- END INSTITUTIONAL KNOWLEDGE ---"
+    )
+
+
+def _augment_mentor_history(mode: ChatMode, history: list[dict]) -> list[dict]:
+    """For MENTOR mode, append retrieved alumni wisdom to the latest user turn.
+
+    Kept out of the (cached) system prompt so prompt caching still works.
+    """
+    if mode != ChatMode.MENTOR or not history:
+        return history
+    last_user_idx = next(
+        (i for i in range(len(history) - 1, -1, -1) if history[i].get("role") == "user"),
+        None,
+    )
+    if last_user_idx is None:
+        return history
+    ctx = _alumni_context(history[last_user_idx].get("content", ""))
+    if not ctx:
+        return history
+    aug = [dict(m) for m in history]
+    aug[last_user_idx] = {**aug[last_user_idx], "content": aug[last_user_idx]["content"] + ctx}
+    return aug
+
+
 def respond(
     mode: ChatMode,
     history: list[dict],
@@ -226,6 +271,7 @@ def respond(
     """Return (assistant_text, cost_usd). Records call to budget."""
     system = _system_for(mode, scenario, delegate_name)
     tier = _tier_for(mode)
+    history = _augment_mentor_history(mode, history)
 
     result = chat(
         messages=history,
@@ -261,6 +307,7 @@ def stream_respond(
     """Yield (text_delta, None) until done, then ('', cost_usd)."""
     system = _system_for(mode, scenario, delegate_name)
     tier = _tier_for(mode)
+    history = _augment_mentor_history(mode, history)
 
     final = None
     for delta, result in stream_chat(

@@ -139,6 +139,64 @@ def hybrid_search(
     return hits
 
 
+@dataclass
+class Passage:
+    doc_id: str
+    doc_title: str
+    doc_type: str
+    text: str
+
+
+def retrieve_passages(
+    query: str,
+    *,
+    doc_types: list[str] | None = None,
+    top_k: int = 4,
+    alpha: float = 0.6,
+    exec_visible: bool = True,
+) -> list[Passage]:
+    """Top matching chunks with FULL text, for feeding RAG context into the
+    mentor / brief generators (not the browse UI). Unlike hybrid_search this
+    does NOT dedupe per doc, so multiple strong passages from one rich interview
+    can all surface.
+    """
+    chunks, bm25, matrix = _build_bm25_state()
+    if not chunks:
+        return []
+
+    q_emb_list, _ = embed_batch([query], input_type="query")
+    q_emb = q_emb_list[0]
+    q_emb = q_emb / max(float(np.linalg.norm(q_emb)), 1e-8)
+    vec_scores = (matrix @ q_emb + 1.0) / 2.0
+
+    bm_scores = np.array(bm25.get_scores(_tokenize(query)), dtype=np.float32)
+    bm_max = float(bm_scores.max()) if bm_scores.size else 0.0
+    if bm_max > 0:
+        bm_scores = bm_scores / bm_max
+
+    combined = alpha * vec_scores + (1.0 - alpha) * bm_scores
+
+    keep = np.ones(len(chunks), dtype=bool)
+    for i, c in enumerate(chunks):
+        if doc_types and c.doc_type not in doc_types:
+            keep[i] = False
+            continue
+        if not exec_visible and c.visibility == "exec_only":
+            keep[i] = False
+    combined[~keep] = -1.0
+
+    order = np.argsort(-combined)
+    out: list[Passage] = []
+    for idx in order:
+        if combined[int(idx)] < 0:
+            break
+        c = chunks[int(idx)]
+        out.append(Passage(c.doc_id, c.doc_title, c.doc_type, c.text))
+        if len(out) >= top_k:
+            break
+    return out
+
+
 def _make_snippet(text: str, query: str, *, target_chars: int = 280) -> str:
     """Find first occurrence of any query token; return surrounding window."""
     tokens = _tokenize(query)

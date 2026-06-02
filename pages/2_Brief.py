@@ -13,7 +13,7 @@ inject_global_css()
 user = require_login()
 top_nav(user)
 
-page_header("Brief", "A starting point on any country", "Built around the team's three-question framework.")
+page_header("Brief", "A starting point on any country", "Built around the team's three-question framework.", banner=True)
 
 # Compact form: country + committee + depth on one row, topic below, notes optional
 seeded_topic = st.session_state.pop("brief_seed_topic", "")

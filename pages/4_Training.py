@@ -15,7 +15,7 @@ top_nav(user)
 ROOT = Path(__file__).resolve().parent.parent
 SEED = ROOT / "data" / "seed"
 
-page_header("Training", "What we know, distilled", "Quick reference, guides for first-timers, and the team's tactical playbook.")
+page_header("Training", "What we know, distilled", "Quick reference, guides for first-timers, and the team's tactical playbook.", banner=True)
 
 tabs = st.tabs([
     "Quick reference",

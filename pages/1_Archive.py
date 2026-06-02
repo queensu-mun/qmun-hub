@@ -4,29 +4,51 @@ from pathlib import Path
 
 import streamlit as st
 
+from lib import icons
 from lib.auth import require_login
 from lib.index import doc_text, index_stats, list_docs
 from lib.search import hybrid_search
 from lib.ui import brand_footer, inject_global_css, page_header, top_nav
+
+_DOC_ICONS = {
+    "working_paper": icons.brief,
+    "position_paper": icons.brief,
+    "background_guide": icons.book,
+    "study_guide": icons.book,
+    "training": icons.target,
+    "alumni_interview": icons.users,
+    "director_note": icons.mic,
+}
+
+
+def _doc_icon(doc_type: str, size: int = 16) -> str:
+    fn = _DOC_ICONS.get(doc_type, icons.archive)
+    return f"<span style='color:var(--blue);'>{fn(size=size)}</span>"
 
 st.set_page_config(page_title="Archive · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
 user = require_login()
 top_nav(user)
 
+# Alumni interviews are intentionally absent: they are backend-only (they feed
+# the Mentor chatbot + brief generator) and are not browsable here.
 DOC_TYPE_LABELS = {
     "All types": None,
+    "Working paper": "working_paper",
     "Position paper": "position_paper",
     "Study guide": "study_guide",
-    "Alumni interview": "alumni_interview",
     "Director note": "director_note",
     "Background guide": "background_guide",
     "Training": "training",
     "Misc": "misc",
 }
+
+# Doc types hidden from the public Archive (browse + search). They remain indexed
+# and retrievable by the mentor/brief RAG layer.
+ARCHIVE_HIDDEN_TYPES = {"alumni_interview"}
 DOC_TYPE_DISPLAY = {v: k for k, v in DOC_TYPE_LABELS.items() if v}
 
-page_header("Archive", "Search the team's knowledge", "Past papers, study guides, alumni interviews, training docs.")
+page_header("Archive", "Search the team's knowledge", "Past papers, study guides, alumni interviews, training docs.", banner=True)
 
 stats = index_stats()
 if stats["n_docs"] == 0:
@@ -74,20 +96,27 @@ if "archive_open_doc" in st.session_state:
         pdf_path = Path(source) if is_pdf else None
 
         if is_pdf and pdf_path and pdf_path.exists():
-            # PDFs render poorly as extracted text. Offer the original instead.
-            st.info(
-                "This is a PDF. The extracted text is searchable via the Archive search, "
-                "but for reading, download the original below."
-            )
-            with open(pdf_path, "rb") as f:
-                st.download_button(
-                    "⬇ Download original PDF",
-                    data=f.read(),
-                    file_name=pdf_path.name,
-                    mime="application/pdf",
-                    type="primary",
+            # Native PDF: render the original inline so images and formatting
+            # show. Download stays available as a secondary action.
+            pdf_bytes = pdf_path.read_bytes()
+            rendered = False
+            try:
+                from streamlit_pdf_viewer import pdf_viewer
+                pdf_viewer(pdf_bytes, width="100%", height=900, key=f"pdfview_{doc_id}")
+                rendered = True
+            except Exception:
+                st.info(
+                    "This is a PDF. The extracted text is searchable, "
+                    "but for reading, download the original below."
                 )
-            with st.expander("Show indexed text anyway"):
+            st.download_button(
+                "⬇ Download original PDF",
+                data=pdf_bytes,
+                file_name=pdf_path.name,
+                mime="application/pdf",
+                type="secondary" if rendered else "primary",
+            )
+            with st.expander("Show indexed text"):
                 text = doc_text(doc_id)
                 if text:
                     st.markdown(text[:80_000])
@@ -96,7 +125,7 @@ if "archive_open_doc" in st.session_state:
                 else:
                     st.caption("No indexed text available.")
         else:
-            # Markdown / text doc — render inline in the reading column.
+            # Text / markdown doc with no original file: render inline.
             text = doc_text(doc_id)
             if text:
                 st.markdown(text[:80_000])
@@ -145,12 +174,16 @@ if submitted and query:
             exec_visible=user.is_exec,
         )
 
+    hits = [h for h in hits if h.doc_type not in ARCHIVE_HIDDEN_TYPES]
     if not hits:
         st.info("No results. Try a different query or remove filters.")
     else:
         st.caption(f"{len(hits)} result{'s' if len(hits) != 1 else ''}")
         for h in hits:
-            st.markdown(f"#### {h.doc_title}")
+            st.markdown(
+                f"<h4 style='margin-bottom:0.15rem;'>{_doc_icon(h.doc_type, 18)} &nbsp;{h.doc_title}</h4>",
+                unsafe_allow_html=True,
+            )
             st.caption(_meta_line(h.doc_type, h.year, h.quality_flag))
             st.markdown(f"> {h.snippet}")
             row = st.columns([1, 1, 6])
@@ -178,11 +211,18 @@ else:
         unsafe_allow_html=True,
     )
     docs = list_docs()
-    visible = [d for d in docs if user.is_exec or d["visibility"] == "team"]
+    visible = [
+        d for d in docs
+        if (user.is_exec or d["visibility"] == "team")
+        and d["doc_type"] not in ARCHIVE_HIDDEN_TYPES
+    ]
     for d in visible:
         title_col, meta_col, btn_col = st.columns([4, 3, 1])
         with title_col:
-            st.markdown(f"**{d['title']}**")
+            st.markdown(
+                f"{_doc_icon(d['doc_type'])} &nbsp;<strong>{d['title']}</strong>",
+                unsafe_allow_html=True,
+            )
         with meta_col:
             st.caption(_meta_line(d["doc_type"], d["year"], d["quality_flag"], f"{d['chunk_count']} chunks"))
         with btn_col:

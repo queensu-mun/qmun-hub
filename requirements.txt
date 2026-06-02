@@ -1,6 +1,7 @@
 streamlit~=1.50.0
 streamlit-shadcn-ui>=0.1.18
 streamlit-extras>=0.4.0
+streamlit-pdf-viewer>=0.0.29
 anthropic~=0.97.0
 voyageai~=0.3.7
 supabase>=2.7.0

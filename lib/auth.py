@@ -10,13 +10,25 @@ Three modes, tried in order:
 """
 from __future__ import annotations
 
+import base64
 import secrets as _pysecrets
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 from urllib.parse import urlencode
 
 import httpx
 import streamlit as st
+
+_SIGNIN_PHOTO = Path(__file__).resolve().parent.parent / "assets" / "signin.jpg"
+
+
+@lru_cache(maxsize=1)
+def _signin_bg_uri() -> str | None:
+    if not _SIGNIN_PHOTO.exists():
+        return None
+    return "data:image/jpeg;base64," + base64.b64encode(_SIGNIN_PHOTO.read_bytes()).decode()
 
 Role = Literal["delegate", "exec", "admin"]
 
@@ -100,15 +112,42 @@ def _render_pilot_gate() -> "User | None":
     except (KeyError, FileNotFoundError):
         correct = ""
 
+    bg = _signin_bg_uri()
+    if bg:
+        st.markdown(
+            f"""
+<style>
+[data-testid="stAppViewContainer"], .stApp {{
+  background: linear-gradient(rgba(6,14,26,0.82), rgba(6,14,26,0.93)),
+              url('{bg}') center/cover fixed no-repeat;
+}}
+[data-testid="stForm"] {{
+  background: rgba(18, 31, 50, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 16px;
+  padding: 1.6rem 1.5rem 1.25rem;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+}}
+</style>
+""",
+            unsafe_allow_html=True,
+        )
+
     _, col, _ = st.columns([1, 2, 1])
     with col:
+        st.markdown("<div style='height:7vh;'></div>", unsafe_allow_html=True)
         st.markdown(
             """
-<div style='text-align:center; padding:3.5rem 0 1.75rem;'>
-  <div style='font-family:"Fraunces",serif; font-size:1.9rem; color:#0d1b3e;
-              font-weight:700; letter-spacing:-0.02em;'>Queen's MUN</div>
-  <div style='color:#777; font-size:0.88rem; margin-top:0.35rem; letter-spacing:0.01em;'>
-    Pilot workspace
+<div style='text-align:center; padding:0 0 1.5rem;'>
+  <div style='font-family:"Fraunces",serif; font-size:2.4rem; color:#F2F2F0;
+              font-weight:700; letter-spacing:-0.02em; text-shadow:0 2px 18px rgba(0,0,0,0.5);'>
+    Queen's MUN
+  </div>
+  <div style='color:rgba(242,242,240,0.72); font-size:0.9rem; margin-top:0.4rem;
+              letter-spacing:0.08em; text-transform:uppercase;'>
+    Team Workspace
   </div>
 </div>
 """,
@@ -289,6 +328,14 @@ def require_exec() -> User:
     user = require_login()
     if not user.is_exec:
         st.error("This page is exec-only.")
+        st.stop()
+    return user
+
+
+def require_admin() -> User:
+    user = require_login()
+    if not user.is_admin:
+        st.error("This page is admin-only.")
         st.stop()
     return user
 

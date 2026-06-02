@@ -73,6 +73,21 @@ This indexes the 5 seed docs (Art of MUN, MUN Claude, HRC, Global Commission Pri
    - Set the entrypoint to `app.py`
    - OR deploy to Railway ($5/mo): connect GitHub, add env vars; the repo's `Procfile` runs Streamlit on `$PORT`
 
+## Images / visual assets (drop-in slots)
+
+The app ships with an editorial chamber illustration and tricolor accents so it
+looks intentional with zero photos. To make it feel like *your* team, drop real
+images into `assets/`. No code changes needed; each slot renders the image when
+the file exists and falls back to the illustration/placeholder when it does not.
+
+| File | Where it shows | Suggested image |
+|---|---|---|
+| `assets/hero.jpg` | Home page hero (top right) | A strong wide shot: delegates in committee, a conference banner, the team at a social. High-contrast works best (the app dims + overlays it). ~1200x900. |
+| Social attachments | Home "Upcoming socials" + Socials page | Upload flyers/photos through Director → Announcement & Socials; the first image attachment auto-thumbnails on the home page. |
+
+Anything more (per-page banners, conference cards) can reuse the same
+conditional-render pattern; ask in a future session and we will wire new slots.
+
 ## Tier 3: handoff to next Director (March 2027)
 
 See `DIRECTOR_MANUAL.md`. Key items:

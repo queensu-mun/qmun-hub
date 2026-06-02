@@ -115,6 +115,39 @@ class Feedback:
     created_at: str | None = None
 
 
+@dataclass
+class FinanceEntry:
+    """A single team-finance line item. Admin-only surface.
+
+    kind:
+      due      money a delegate owes the team (membership dues, conference share)
+      income   money received (dues paid, fundraising, sponsorship)
+      expense  money spent (registration, travel, equipment, socials)
+      budget   a planned allocation / budget line (not yet spent)
+
+    amount_cad is always stored positive; `kind` carries the direction.
+    delegate_name links a `due`/`income` to a roster member; conference_id links
+    any entry to a conference for per-event roll-ups.
+    """
+    id: str
+    kind: str                          # due | income | expense | budget
+    description: str
+    amount_cad: float
+    date: str                          # ISO date
+    category: str = "other"            # conference | social | equipment | dues | fundraising | other
+    conference_id: str | None = None
+    delegate_name: str | None = None
+    status: str = "outstanding"        # outstanding | paid | reconciled
+    notes: str | None = None
+    created_by: str | None = None
+    created_at: str | None = None
+
+
+FINANCE_KINDS = ["due", "income", "expense", "budget"]
+FINANCE_CATEGORIES = ["dues", "conference", "social", "equipment", "fundraising", "other"]
+FINANCE_STATUSES = ["outstanding", "paid", "reconciled"]
+
+
 def _default_state() -> dict:
     return {
         "team_year": "2026-2027",
@@ -125,6 +158,8 @@ def _default_state() -> dict:
         "feedback": [],
         "socials": [],
         "delegations": [],
+        "finances": [],
+        "tour_completed_names": [],
         "announcement": None,
         "team_insights_cache": None,   # {generated_at, week_start, payload}
         "settings": {
@@ -222,6 +257,8 @@ def _normalize_state(s: dict) -> dict:
     s.setdefault("feedback", [])
     s.setdefault("socials", [])
     s.setdefault("delegations", [])
+    s.setdefault("finances", [])
+    s.setdefault("tour_completed_names", [])
     s.setdefault("team_insights_cache", None)
     return s
 
@@ -476,6 +513,110 @@ def list_delegations() -> list[dict]:
     rows = list(load().get("delegations", []))
     rows.sort(key=lambda d: d.get("school", "").lower())
     return rows
+
+
+# ----- finances (admin-only) -----
+
+def add_finance_entry(f: FinanceEntry) -> None:
+    with edit() as state:
+        _normalize_state(state)
+        state["finances"].append(asdict(f))
+
+
+def update_finance_entry(entry_id: str, **fields) -> None:
+    with edit() as state:
+        _normalize_state(state)
+        for entry in state["finances"]:
+            if entry["id"] == entry_id:
+                entry.update({k: v for k, v in fields.items() if v is not None})
+                return
+
+
+def remove_finance_entry(entry_id: str) -> None:
+    with edit() as state:
+        _normalize_state(state)
+        state["finances"] = [f for f in state["finances"] if f["id"] != entry_id]
+
+
+def list_finances(*, kind: str | None = None, status: str | None = None) -> list[dict]:
+    rows = list(load().get("finances", []))
+    if kind:
+        rows = [f for f in rows if f.get("kind") == kind]
+    if status:
+        rows = [f for f in rows if f.get("status") == status]
+    rows.sort(key=lambda f: f.get("date") or "", reverse=True)
+    return rows
+
+
+def finance_summary() -> dict:
+    """Roll-up for the dashboard cards.
+
+    net is the actual cash position: other income + collected (paid) dues, minus
+    expenses. outstanding_dues is money still owed (kind=due, not yet paid).
+    budgeted is the sum of planned budget lines.
+    """
+    rows = load().get("finances", [])
+    income = sum(
+        f.get("amount_cad", 0.0) for f in rows
+        if f.get("kind") == "income"
+    )
+    expense = sum(
+        f.get("amount_cad", 0.0) for f in rows
+        if f.get("kind") == "expense"
+    )
+    outstanding_dues = sum(
+        f.get("amount_cad", 0.0) for f in rows
+        if f.get("kind") == "due" and f.get("status") not in ("paid", "reconciled")
+    )
+    collected_dues = sum(
+        f.get("amount_cad", 0.0) for f in rows
+        if f.get("kind") == "due" and f.get("status") in ("paid", "reconciled")
+    )
+    budgeted = sum(
+        f.get("amount_cad", 0.0) for f in rows
+        if f.get("kind") == "budget"
+    )
+    return {
+        "income": income,
+        "expense": expense,
+        "collected_dues": collected_dues,
+        "net": income + collected_dues - expense,
+        "outstanding_dues": outstanding_dues,
+        "budgeted": budgeted,
+        "count": len(rows),
+    }
+
+
+# ----- team settings -----
+
+def get_setting(key: str, default=None):
+    return load().get("settings", {}).get(key, default)
+
+
+def update_settings(**fields) -> None:
+    with edit() as s:
+        s.setdefault("settings", {})
+        s["settings"].update({k: v for k, v in fields.items() if v is not None})
+
+
+# ----- tutorial / onboarding tour -----
+
+def has_completed_tour(name: str) -> bool:
+    """Name-keyed (pilot mode has no per-user store). Case-insensitive."""
+    if not name:
+        return False
+    target = name.strip().lower()
+    return any(n.strip().lower() == target for n in load().get("tour_completed_names", []))
+
+
+def mark_tour_completed(name: str) -> None:
+    if not name:
+        return
+    target = name.strip().lower()
+    with edit() as s:
+        _normalize_state(s)
+        if not any(n.strip().lower() == target for n in s["tour_completed_names"]):
+            s["tour_completed_names"].append(name.strip())
 
 
 def new_id() -> str:

@@ -1,8 +1,22 @@
 from __future__ import annotations
 
+import base64
+from functools import lru_cache
+from pathlib import Path
+
 import streamlit as st
 
 from lib.icons import qmun_logo, tricolor_bar
+
+_BANNER_PHOTO = Path(__file__).resolve().parent.parent / "assets" / "banner.jpg"
+
+
+@lru_cache(maxsize=1)
+def _banner_data_uri() -> str | None:
+    if not _BANNER_PHOTO.exists():
+        return None
+    b64 = base64.b64encode(_BANNER_PHOTO.read_bytes()).decode()
+    return f"data:image/jpeg;base64,{b64}"
 
 GLOBAL_CSS = """
 <style>
@@ -537,6 +551,18 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     color: var(--text);
     opacity: 0.9;
 }
+/* Editorial chamber illustration sitting behind the hero-panel text. */
+.hero-panel-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.85;
+    pointer-events: none;
+}
+.hero-panel-art svg { width: 100%; height: 100%; }
+.hero-panel > .hero-panel-title,
+.hero-panel > .hero-panel-meta,
+.hero-panel > .hero-panel-tricolor { position: relative; z-index: 1; }
 .hero-panel-title {
     font-family: 'Inter Tight', sans-serif;
     font-size: 1.5rem;
@@ -593,6 +619,57 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     margin-right: 6px;
 }
 
+/* Guided tour banner */
+.tour-banner {
+    border: 1px solid rgba(75, 123, 191, 0.45);
+    border-left: 3px solid var(--blue);
+    border-radius: 10px;
+    background:
+        radial-gradient(ellipse 80% 100% at 0% 0%, rgba(75, 123, 191, 0.12), transparent 70%),
+        var(--surface-2);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.6rem;
+}
+.tour-banner-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 0.35rem;
+}
+.tour-banner-icon { color: var(--blue); display: inline-flex; }
+.tour-banner-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+.tour-banner-step {
+    margin-left: auto;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.tour-banner-body {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+}
+.tour-banner-bar {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.tour-banner-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9D1939, #B89D5E, #4B7BBF);
+    transition: width 0.2s ease;
+}
+
 /* Hero photo treatment */
 .hero-photo-wrap {
     position: relative;
@@ -611,6 +688,59 @@ hr, div[data-testid="stMarkdownContainer"] hr {
     inset: 0;
     background: linear-gradient(135deg, rgba(6, 14, 26, 0.4) 0%, rgba(6, 14, 26, 0) 50%, rgba(6, 14, 26, 0.7) 100%);
     pointer-events: none;
+}
+
+/* Page-header banner (title over dimmed committee photo) */
+.page-banner {
+    position: relative;
+    min-height: 150px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: flex-end;
+    background-size: cover;
+    background-position: center 35%;
+    border: 1px solid var(--border);
+}
+.page-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(6,14,26,0.25) 0%, rgba(6,14,26,0.82) 100%);
+}
+.page-banner-content { position: relative; z-index: 1; padding: 1.1rem 1.4rem; }
+.page-banner-content h1 { margin: 0 0 0.2rem; }
+.page-banner-lede { color: var(--text-muted); font-size: 0.95rem; max-width: 640px; }
+
+/* Empty-state placeholder */
+.empty-state {
+    text-align: center;
+    padding: 2.25rem 1.5rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background:
+        radial-gradient(ellipse 60% 80% at 50% 0%, rgba(75, 123, 191, 0.06), transparent 70%),
+        var(--surface);
+    color: var(--text-muted);
+}
+.empty-state-icon {
+    color: var(--blue);
+    opacity: 0.75;
+    margin-bottom: 0.5rem;
+}
+.empty-state-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+}
+.empty-state-blurb {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    max-width: 420px;
+    margin: 0 auto;
 }
 
 /* Prep status card */
@@ -776,11 +906,55 @@ def inject_global_css() -> None:
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 
-def page_header(_eyebrow_unused: str, title: str, lede: str | None = None) -> None:
-    """Eyebrow argument retained for backward compat but no longer rendered."""
-    st.markdown(f"<h1>{title}</h1>", unsafe_allow_html=True)
+def page_header(_eyebrow_unused: str, title: str, lede: str | None = None,
+                *, banner: bool = False) -> None:
+    """Eyebrow argument retained for backward compat but no longer rendered.
+
+    A short tricolor accent under the title is the recurring brand motif that
+    anchors every page visually. Pass `banner=True` to render the title over a
+    dimmed committee photo (falls back to the plain header if the image is
+    missing).
+    """
+    uri = _banner_data_uri() if banner else None
+    if uri:
+        lede_html = f"<div class='page-banner-lede'>{lede}</div>" if lede else ""
+        st.markdown(
+            f"""
+<div class='page-banner' style="background-image:url('{uri}');">
+  <div class='page-banner-content'>
+    <h1>{title}</h1>
+    {lede_html}
+  </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        return
+    st.markdown(f"<h1 style='margin-bottom:0.4rem;'>{title}</h1>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='max-width:64px;margin-bottom:0.6rem;'>{tricolor_bar(height=3)}</div>",
+        unsafe_allow_html=True,
+    )
     if lede:
         st.markdown(f"<div class='lede'>{lede}</div>", unsafe_allow_html=True)
+
+
+def empty_state(*, icon_svg: str, title: str, blurb: str = "") -> None:
+    """A styled, on-brand placeholder for sections with nothing to show yet.
+
+    Beats a bare line of caption text and keeps empty pages from feeling broken.
+    """
+    blurb_html = f"<div class='empty-state-blurb'>{blurb}</div>" if blurb else ""
+    st.markdown(
+        f"""
+<div class='empty-state'>
+  <div class='empty-state-icon'>{icon_svg}</div>
+  <div class='empty-state-title'>{title}</div>
+  {blurb_html}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def tag(text: str, *, accent: bool = False) -> str:
@@ -849,6 +1023,10 @@ def top_nav(user) -> None:
 
     st.markdown(tricolor_bar(height=1), unsafe_allow_html=True)
     st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+
+    # Guided tour banner (no-op unless a tour is active). Lazy import avoids cycles.
+    from lib import tour
+    tour.render_banner(user)
 
 
 def feature_tile(*, icon_svg: str, title: str, blurb: str, page_path: str, link_label: str = "Open") -> None:

@@ -23,6 +23,7 @@ that is acceptable. Splitting into per-entity tables is a future step if needed.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from contextlib import contextmanager
 from functools import lru_cache
@@ -94,7 +95,15 @@ def _secret_section(name: str) -> dict:
 
 @lru_cache(maxsize=1)
 def backend() -> str:
-    """'supabase' if configured, else 'local'. Cached per process."""
+    """'supabase' if configured, else 'local'. Cached per process.
+
+    `QMUN_FORCE_LOCAL=1` forces local mode even when Supabase secrets are
+    present. This lets us run/test the app against `data/store.db` without
+    mutating live team state (the local secrets.toml carries [supabase], so
+    every plain `streamlit run` would otherwise hit production).
+    """
+    if os.environ.get("QMUN_FORCE_LOCAL"):
+        return "local"
     s = _secret_section("supabase")
     if s.get("url") and s.get("service_role_key"):
         return "supabase"

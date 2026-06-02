@@ -48,8 +48,8 @@ SOURCES = [
         "title": "The Art of MUN (25-26)",
         "doc_type": "training",
         "year": 2025,
-        "path": SEED / "art_of_mun_25_26.md",
-        "kind": "markdown",
+        "path": SEED / "art_of_mun_25_26.pdf",
+        "kind": "pdf",
         "metadata": {
             "author": "Russell Van Raalte (23/24), edited by Jake Louhikari, Jack Guillemette, Savannah Summers",
             "scope": "Full delegate handbook: parli pro, position papers, draft resolutions, crisis, SAs",
@@ -113,7 +113,7 @@ SOURCES = [
         "year": 2026,
         "path": SEED / "awards_rubric.md",
         "kind": "markdown",
-        "metadata": {"scope": "What chairs evaluate; conference-specific weighting; what wins and loses awards"},
+        "metadata": {"scope": "What chairs evaluate across four axes; what wins and loses awards; how weighting varies by conference"},
         "quality_flag": "exemplary",
     },
     {
@@ -176,12 +176,65 @@ SOURCES = [
         "metadata": {"scope": "Format, research process, common mistakes, using the paper in committee"},
         "quality_flag": "exemplary",
     },
+    {
+        "doc_id": "seed_wp_slap_mcmun_2026",
+        "title": "Working Paper · SLAP — Sierra Leone Reconstruction (McMUN 2026, UNSC)",
+        "doc_type": "working_paper",
+        "year": 2026,
+        "path": SEED / "wp_slap_sierra_leone_mcmun_2026.pdf",
+        "kind": "pdf",
+        "metadata": {
+            "conference": "McMUN 2026",
+            "committee": "UN Security Council",
+            "topic": "Sierra Leone post-civil-war reconstruction",
+            "scope": "Comprehensive UNSC working paper: governance, DDR, civilian protection, economic recovery. Coherent chess/Arthurian naming theme across 26 operative clauses.",
+        },
+        "quality_flag": "exemplary",
+    },
+    {
+        "doc_id": "seed_wp_peace_prisons",
+        "title": "Working Paper · PEACE — Global Prison Reform",
+        "doc_type": "working_paper",
+        "year": 2025,
+        "path": SEED / "wp_peace_prison_reform.pdf",
+        "kind": "pdf",
+        "metadata": {
+            "committee": "Global Commission on the Rights of Prisoners",
+            "topic": "Prison reform: rights, rehabilitation, oversight, funding",
+            "scope": "Model working paper: preambulatory + operative structure, sovereignty carve-outs, Nelson Mandela Rules and Geneva Convention references, tiered oversight + funding mechanism. Rainbow-color naming theme.",
+        },
+        "quality_flag": "exemplary",
+    },
+    {
+        "doc_id": "seed_wp_farm_to_table_mcmun_2025",
+        "title": "Working Paper · FARM to Table — Food Security & Transport (McMUN 2025, WFP)",
+        "doc_type": "working_paper",
+        "year": 2025,
+        "path": SEED / "wp_farm_to_table_mcmun_2025.pdf",
+        "kind": "pdf",
+        "metadata": {
+            "conference": "McMUN 2025",
+            "committee": "World Food Programme",
+            "topic": "Food transport infrastructure, self-sufficiency, food security",
+            "scope": "Comprehensive WFP paper: inclusion, food-refugee status, cold chain, GIS mapping, biofuels, funding via % GDP. Fully food-themed naming across ~30 clauses; closes 'remains actively seized.'",
+        },
+        "quality_flag": "exemplary",
+    },
 ]
 
 
 def main() -> int:
+    # Optional positional args: only (re)index these doc_ids. No args = full seed.
+    only = set(sys.argv[1:])
+    sources = [s for s in SOURCES if not only or s["doc_id"] in only]
+    if only:
+        missing = only - {s["doc_id"] for s in SOURCES}
+        if missing:
+            print(f"  WARNING: unknown doc_id(s): {', '.join(sorted(missing))}")
+        print(f"Re-indexing {len(sources)} doc(s): {', '.join(s['doc_id'] for s in sources)}")
+
     total_chunks = 0
-    for src in SOURCES:
+    for src in sources:
         path: Path = src["path"]
         if not path.exists():
             print(f"  SKIP (missing): {path}")

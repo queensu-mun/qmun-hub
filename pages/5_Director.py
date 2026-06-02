@@ -28,8 +28,9 @@ tabs = st.tabs([
     "Conferences",
     "Assignments",
     "Curation",
-    "Cost Dashboard",
+    "API Costs",
     "Alumni Outreach",
+    "Finance",
 ])
 
 state = state_lib.load()
@@ -786,29 +787,33 @@ with tabs[6]:
                     st.success("Deleted.")
                     st.rerun()
 
-# ----------------- TAB 7: Cost Dashboard -----------------
+# ----------------- TAB 7: API Costs (admin-only) -----------------
 with tabs[7]:
-    st.markdown("### This month")
-    monthly = current_monthly()
-    cols = st.columns(4)
-    cols[0].metric("Spent", f"${monthly.spent_usd:.2f}")
-    cols[1].metric("Projected", f"${monthly.projected_usd:.2f}", delta=f"of ${monthly.cap_usd:.0f} cap")
-    cols[2].metric("Cap", f"${monthly.cap_usd:.0f}")
-    cols[3].metric("Headroom", f"${max(0, monthly.cap_usd - monthly.projected_usd):.2f}")
-
-    if monthly.should_block:
-        st.error(f"⚠️ Hit monthly cap. New API calls blocked until next month.")
-    elif monthly.should_warn:
-        st.warning(f"⚠️ Approaching monthly cap. Projected ${monthly.projected_usd:.2f} of ${monthly.cap_usd:.0f}.")
+    if not user.is_admin:
+        st.info("API cost tracking is admin-only.")
     else:
-        st.success(f"On track. {monthly.fraction_used * 100:.0f}% of cap used.")
+        st.caption("What the app itself spends on AI (Anthropic + Voyage). For team money, see the Finance tab.")
+        st.markdown("### This month")
+        monthly = current_monthly()
+        cols = st.columns(4)
+        cols[0].metric("Spent", f"${monthly.spent_usd:.2f}")
+        cols[1].metric("Projected", f"${monthly.projected_usd:.2f}", delta=f"of ${monthly.cap_usd:.0f} cap")
+        cols[2].metric("Cap", f"${monthly.cap_usd:.0f}")
+        cols[3].metric("Headroom", f"${max(0, monthly.cap_usd - monthly.projected_usd):.2f}")
 
-    st.markdown("### Top users this month")
-    rows = top_users(20)
-    if rows:
-        for u, cost, calls in rows:
-            st.markdown(
-                f"""
+        if monthly.should_block:
+            st.error(f"⚠️ Hit monthly cap. New API calls blocked until next month.")
+        elif monthly.should_warn:
+            st.warning(f"⚠️ Approaching monthly cap. Projected ${monthly.projected_usd:.2f} of ${monthly.cap_usd:.0f}.")
+        else:
+            st.success(f"On track. {monthly.fraction_used * 100:.0f}% of cap used.")
+
+        st.markdown("### Top users this month")
+        rows = top_users(20)
+        if rows:
+            for u, cost, calls in rows:
+                st.markdown(
+                    f"""
 <div class='doc-row'>
   <div>
     <div class='doc-row-title'>{u}</div>
@@ -817,10 +822,10 @@ with tabs[7]:
   <div style='font-family:Inter Tight, sans-serif; font-weight:600; color:var(--text);'>${cost:.4f}</div>
 </div>
 """,
-                unsafe_allow_html=True,
-            )
-    else:
-        st.caption("No usage yet this month.")
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.caption("No usage yet this month.")
 
 # ----------------- TAB 8: Alumni Outreach -----------------
 with tabs[8]:
@@ -840,5 +845,241 @@ with tabs[8]:
         with st.container(border=True):
             st.markdown(f"**{d['title']}**")
             st.caption(f"{d['chunk_count']} chunks · indexed {d['indexed_at'][:10]}")
+
+# ----------------- TAB 9: Finance (admin-only) -----------------
+with tabs[9]:
+    if not user.is_admin:
+        st.info("Finance is admin-only.")
+    else:
+        st.caption("Track team money: dues, income, expenses, and budget lines. All amounts in CAD.")
+        summary = state_lib.finance_summary()
+        cards = st.columns(4)
+        cards[0].metric("Net balance", f"${summary['net']:,.2f}")
+        cards[1].metric("Money in", f"${summary['income'] + summary['collected_dues']:,.2f}")
+        cards[2].metric("Expenses", f"${summary['expense']:,.2f}")
+        cards[3].metric("Outstanding dues", f"${summary['outstanding_dues']:,.2f}")
+        caption_bits = []
+        if summary["collected_dues"]:
+            caption_bits.append(f"Dues collected: ${summary['collected_dues']:,.2f}")
+        if summary["budgeted"]:
+            caption_bits.append(f"Budgeted (planned): ${summary['budgeted']:,.2f}")
+        if caption_bits:
+            st.caption(" · ".join(caption_bits))
+
+        confs = state.get("conferences", [])
+        conf_names = {c["id"]: c["name"] for c in confs}
+        roster = state.get("roster", [])
+        roster_names = [d["name"] for d in roster]
+
+        # ---- Dues roster: who has / hasn't paid ----
+        st.markdown("### Dues")
+        dues_amount = float(state_lib.get_setting("dues_amount_cad", 0.0) or 0.0)
+        dcols = st.columns([2, 1, 3])
+        new_amt = dcols[0].number_input(
+            "Dues per member (CAD)", min_value=0.0, step=5.0, value=dues_amount, key="dues_amount_input",
+        )
+        if dcols[1].button("Save", key="save_dues_amount", use_container_width=True):
+            state_lib.update_settings(dues_amount_cad=float(new_amt))
+            st.success("Dues amount saved.")
+            st.rerun()
+
+        if not roster:
+            st.caption("No roster yet. Add delegates in the Delegates tab to track dues.")
+        else:
+            # Map each roster member (case-insensitive name) to their dues entry.
+            dues_by_member = {}
+            for f in state_lib.list_finances(kind="due"):
+                if f.get("category") == "dues" and f.get("delegate_name"):
+                    dues_by_member.setdefault(f["delegate_name"].strip().lower(), f)
+
+            uninvoiced = [m for m in roster if m["name"].strip().lower() not in dues_by_member]
+            paid_n = sum(1 for f in dues_by_member.values() if f.get("status") in ("paid", "reconciled"))
+            st.caption(f"{paid_n} paid · {len(dues_by_member) - paid_n} outstanding · {len(uninvoiced)} not invoiced")
+
+            if dues_amount > 0 and uninvoiced:
+                if st.button(f"Invoice all {len(uninvoiced)} uninvoiced at ${dues_amount:,.0f}", key="invoice_all"):
+                    for m in uninvoiced:
+                        state_lib.add_finance_entry(state_lib.FinanceEntry(
+                            id=state_lib.new_id(), kind="due",
+                            description=f"{state.get('team_year', '')} dues".strip(),
+                            amount_cad=dues_amount, date=date.today().isoformat(),
+                            category="dues", delegate_name=m["name"], status="outstanding",
+                            created_by=user.name, created_at=state_lib.now_iso(),
+                        ))
+                    st.rerun()
+
+            for m in roster:
+                entry = dues_by_member.get(m["name"].strip().lower())
+                drow = st.columns([4, 2, 1.6])
+                if entry is None:
+                    badge = tag("not invoiced")
+                    amt_txt = "—"
+                elif entry.get("status") in ("paid", "reconciled"):
+                    badge = tag("paid")
+                    amt_txt = f"${entry['amount_cad']:,.0f}"
+                else:
+                    badge = tag("outstanding", accent=True)
+                    amt_txt = f"${entry['amount_cad']:,.0f}"
+                drow[0].markdown(f"{m['name']} &nbsp; {badge}", unsafe_allow_html=True)
+                drow[1].markdown(
+                    f"<div style='text-align:right;font-family:Inter Tight,sans-serif;"
+                    f"font-weight:600;'>{amt_txt}</div>", unsafe_allow_html=True,
+                )
+                with drow[2]:
+                    if entry is None:
+                        if dues_amount > 0 and st.button("Invoice", key=f"inv_{m['id']}", use_container_width=True):
+                            state_lib.add_finance_entry(state_lib.FinanceEntry(
+                                id=state_lib.new_id(), kind="due",
+                                description=f"{state.get('team_year', '')} dues".strip(),
+                                amount_cad=dues_amount, date=date.today().isoformat(),
+                                category="dues", delegate_name=m["name"], status="outstanding",
+                                created_by=user.name, created_at=state_lib.now_iso(),
+                            ))
+                            st.rerun()
+                    elif entry.get("status") not in ("paid", "reconciled"):
+                        if st.button("Mark paid", key=f"duespaid_{entry['id']}", use_container_width=True):
+                            state_lib.update_finance_entry(entry["id"], status="paid")
+                            st.rerun()
+                    else:
+                        if st.button("Mark unpaid", key=f"duesunpaid_{entry['id']}", use_container_width=True):
+                            state_lib.update_finance_entry(entry["id"], status="outstanding")
+                            st.rerun()
+
+        # ---- Per-conference roll-up ----
+        if confs:
+            st.markdown("### By conference")
+            fins = state_lib.list_finances()
+            roll = []
+            for c in confs:
+                cid = c["id"]
+                exp = sum(f["amount_cad"] for f in fins if f["kind"] == "expense" and f.get("conference_id") == cid)
+                money_in = sum(
+                    f["amount_cad"] for f in fins
+                    if f.get("conference_id") == cid and (
+                        f["kind"] == "income" or (f["kind"] == "due" and f.get("status") in ("paid", "reconciled"))
+                    )
+                )
+                n_del = len(state_lib.assignments_for_conference(cid))
+                roll.append({
+                    "Conference": c["name"],
+                    "Delegates": n_del,
+                    "Expenses": exp,
+                    "Money in": money_in,
+                    "Cost / delegate": (exp / n_del) if n_del else exp,
+                })
+            df_roll = pd.DataFrame(roll)
+            st.dataframe(
+                df_roll, hide_index=True, use_container_width=True,
+                column_config={
+                    "Expenses": st.column_config.NumberColumn(format="$%.2f"),
+                    "Money in": st.column_config.NumberColumn(format="$%.2f"),
+                    "Cost / delegate": st.column_config.NumberColumn(format="$%.2f"),
+                },
+            )
+
+        st.markdown("### Add entry")
+        with st.expander("Add a finance entry"):
+            with st.form("add_finance"):
+                fcols = st.columns(3)
+                kind = fcols[0].selectbox(
+                    "Type", state_lib.FINANCE_KINDS,
+                    format_func=lambda k: {
+                        "due": "Due (owed to team)", "income": "Income (received)",
+                        "expense": "Expense (spent)", "budget": "Budget (planned)",
+                    }[k],
+                )
+                category = fcols[1].selectbox("Category", state_lib.FINANCE_CATEGORIES)
+                fin_date = fcols[2].date_input("Date")
+                description = st.text_input("Description", placeholder="e.g. NCSC registration, fall dues, bus rental")
+                acols = st.columns(3)
+                amount = acols[0].number_input("Amount (CAD)", min_value=0.0, step=10.0, value=0.0)
+                status = acols[1].selectbox("Status", state_lib.FINANCE_STATUSES)
+                conf_choice = acols[2].selectbox(
+                    "Conference (optional)", ["—"] + [c["name"] for c in confs],
+                )
+                delegate_choice = st.selectbox(
+                    "Delegate (optional, for dues / who-owes)", ["—"] + roster_names,
+                )
+                fnotes = st.text_area("Notes", height=70)
+                if st.form_submit_button("Add entry", type="primary"):
+                    if description and amount > 0:
+                        conf_id = next((c["id"] for c in confs if c["name"] == conf_choice), None)
+                        state_lib.add_finance_entry(state_lib.FinanceEntry(
+                            id=state_lib.new_id(),
+                            kind=kind,
+                            description=description,
+                            amount_cad=float(amount),
+                            date=fin_date.isoformat(),
+                            category=category,
+                            conference_id=conf_id,
+                            delegate_name=delegate_choice if delegate_choice != "—" else None,
+                            status=status,
+                            notes=fnotes or None,
+                            created_by=user.name,
+                            created_at=state_lib.now_iso(),
+                        ))
+                        st.success("Entry added.")
+                        st.rerun()
+                    else:
+                        st.error("Description and a non-zero amount are required.")
+
+        st.markdown("### Entries")
+        filt = st.columns(2)
+        kind_filter = filt[0].selectbox("Filter by type", ["All"] + state_lib.FINANCE_KINDS, key="fin_kind_filter")
+        status_filter = filt[1].selectbox("Filter by status", ["All"] + state_lib.FINANCE_STATUSES, key="fin_status_filter")
+        entries = state_lib.list_finances(
+            kind=None if kind_filter == "All" else kind_filter,
+            status=None if status_filter == "All" else status_filter,
+        )
+        if not entries:
+            st.caption("No finance entries yet.")
+        for f in entries:
+            sign = "-" if f["kind"] == "expense" else "+" if f["kind"] in ("income", "due") else ""
+            tagline = f"{f['kind']} · {f.get('category', 'other')} · {f.get('status', 'outstanding')} · {f.get('date', '')}"
+            if f.get("delegate_name"):
+                tagline += f" · {f['delegate_name']}"
+            if f.get("conference_id") and f["conference_id"] in conf_names:
+                tagline += f" · {conf_names[f['conference_id']]}"
+            row = st.columns([5, 1.4, 1.1, 0.9])
+            with row[0]:
+                st.markdown(
+                    f"""
+<div class='doc-row'>
+  <div>
+    <div class='doc-row-title'>{f['description']}</div>
+    <div class='doc-row-meta subtle'>{tagline}</div>
+  </div>
+  <div style='font-family:Inter Tight, sans-serif; font-weight:600; color:var(--text);'>{sign}${f['amount_cad']:,.2f}</div>
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
+            with row[1]:
+                if f.get("status") != "paid" and f["kind"] in ("due", "expense", "income"):
+                    if st.button("Mark paid", key=f"finpaid_{f['id']}", use_container_width=True):
+                        state_lib.update_finance_entry(f["id"], status="paid")
+                        st.rerun()
+            with row[2]:
+                if f.get("status") != "reconciled":
+                    if st.button("Reconcile", key=f"finrec_{f['id']}", use_container_width=True):
+                        state_lib.update_finance_entry(f["id"], status="reconciled")
+                        st.rerun()
+            with row[3]:
+                if st.button("Delete", key=f"findel_{f['id']}", use_container_width=True):
+                    state_lib.remove_finance_entry(f["id"])
+                    st.rerun()
+
+        # ---- CSV export ----
+        all_entries = state_lib.list_finances()
+        if all_entries:
+            df_exp = pd.DataFrame(all_entries)
+            if "conference_id" in df_exp.columns:
+                df_exp.insert(0, "conference", df_exp["conference_id"].map(conf_names))
+            st.download_button(
+                "⬇ Export all entries (CSV)",
+                data=df_exp.to_csv(index=False),
+                file_name="qmun_finances.csv",
+                mime="text/csv",
+            )
 
 brand_footer()

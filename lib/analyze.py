@@ -78,6 +78,33 @@ Output ONLY the JSON. No preamble, no markdown fences.
 """
 
 
+def _alumni_context() -> str:
+    """Recurring-weakness wisdom from alumni interviews (backend-only docs).
+
+    These say what Queen's delegates historically get wrong, which sharpens the
+    weakness + drill recommendations beyond this term's raw feedback.
+    """
+    try:
+        from lib.search import retrieve_passages
+        passages = retrieve_passages(
+            "what Queen's MUN delegates keep getting wrong, recurring mistakes, "
+            "what to drill in training, tactical weaknesses",
+            doc_types=["alumni_interview"],
+            top_k=3,
+        )
+    except Exception:
+        return ""
+    if not passages:
+        return ""
+    blocks = [f'From "{p.doc_title}":\n{p.text.strip()}' for p in passages]
+    return (
+        "\n# ALUMNI INSTITUTIONAL KNOWLEDGE (what past Queen's delegates said the team "
+        "historically gets wrong; weight recurring patterns that match this term's feedback)\n\n"
+        + "\n\n".join(blocks)
+        + "\n"
+    )
+
+
 def _build_user_message(roster: list[dict], feedback: list[dict]) -> str:
     if not feedback:
         return "There is no feedback yet. Return an empty analysis."
@@ -108,6 +135,7 @@ def _build_user_message(roster: list[dict], feedback: list[dict]) -> str:
         lines.append(f.get("notes", "").strip())
         lines.append("")
 
+    lines.append(_alumni_context())
     lines.append("Generate the JSON analysis now.")
     return "\n".join(lines)
 
