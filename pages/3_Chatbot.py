@@ -11,7 +11,7 @@ from lib.chat import (
     FEATURE_KEYS,
     stream_respond,
 )
-from lib.ui import brand_footer, inject_global_css, page_header, top_nav
+from lib.ui import ai_disclaimer, ai_transparency, brand_footer, inject_global_css, page_header, top_nav
 
 st.set_page_config(page_title="Chatbot · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
@@ -44,6 +44,20 @@ selected = st.radio(
 # Page title + lede for selected mode
 st.markdown(f"<h1 style='margin-top:0.75rem;'>{mode_label[selected]}</h1>", unsafe_allow_html=True)
 st.markdown(f"<div class='lede'>{MODE_DESCRIPTIONS[selected]}</div>", unsafe_allow_html=True)
+
+if selected == ChatMode.MENTOR:
+    ai_disclaimer(
+        "<strong>AI-assisted.</strong> Claude can be confidently wrong: verify resolution "
+        "numbers, citations, and procedure against a primary source before you rely on them. "
+        "The Mentor is a coach, not a ghostwriter, use it to sharpen your own thinking and "
+        "drafting, not to write your speech for you."
+    )
+else:
+    ai_disclaimer(
+        "<strong>AI-assisted.</strong> Claude can be confidently wrong: double-check any "
+        "procedure call, rule, or fact against a primary source before you act on it."
+    )
+ai_transparency()
 
 # ----------------- Layout: chat (left), context rail (right) -----------------
 chat_col, rail_col = st.columns([3, 1], gap="large")

@@ -6,7 +6,7 @@ from lib.auth import require_login
 from lib.brief import BriefRequest, generate_streaming
 from lib.budget import current_monthly
 from lib.cache import recent
-from lib.ui import brand_footer, inject_global_css, page_header, tag, top_nav
+from lib.ui import ai_disclaimer, ai_transparency, brand_footer, inject_global_css, page_header, tag, top_nav
 
 st.set_page_config(page_title="Brief · Queen's MUN", page_icon="🌐", layout="wide", initial_sidebar_state="collapsed")
 inject_global_css()
@@ -14,6 +14,13 @@ user = require_login()
 top_nav(user)
 
 page_header("Brief", "A starting point on any country", "Built around the team's three-question framework.", banner=True)
+
+ai_disclaimer(
+    "<strong>AI-assisted draft, not a finished product.</strong> Claude can invent "
+    "resolution numbers, treaties, and citations: verify every one against a primary "
+    "source, then build your real prep on top of this."
+)
+ai_transparency()
 
 # Compact form: country + committee + depth on one row, topic below, notes optional
 seeded_topic = st.session_state.pop("brief_seed_topic", "")

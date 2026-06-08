@@ -898,8 +898,74 @@ div[data-testid="stRadio"] label:has(input:checked) {
     border: 1px solid var(--border);
     flex-shrink: 0;
 }
+
+/* AI transparency / disclaimer note */
+.ai-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 1.25rem;
+    background: rgba(75, 123, 191, 0.06);
+    border: 1px solid rgba(75, 123, 191, 0.22);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+.ai-note-icon { color: var(--blue); flex-shrink: 0; margin-top: 1px; }
+.ai-note strong { color: var(--text); font-weight: 600; }
 </style>
 """
+
+# Small info glyph for the AI note (kept inline so it has no icon-module dep).
+_INFO_ICON_SVG = (
+    "<svg width='15' height='15' viewBox='0 0 24 24' fill='none' "
+    "stroke='currentColor' stroke-width='2' stroke-linecap='round' "
+    "stroke-linejoin='round'><circle cx='12' cy='12' r='10'/>"
+    "<line x1='12' y1='16' x2='12' y2='12'/><line x1='12' y1='8' x2='12.01' y2='8'/></svg>"
+)
+
+# One source of truth for "how the AI works and where the data goes". Surfaced
+# wherever Claude runs so the team (and execs asking that question) can read the
+# answer rather than take it on trust.
+AI_TRANSPARENCY_MD = """\
+**What powers it.** The Brief generator, the Chatbot, and the Director team-insights tool run on Anthropic's Claude models (the same family behind Claude.ai), through Anthropic's commercial API.
+
+**Your data is not used for training.** Anthropic's commercial API does not use your conversations, briefs, or any team data to train its models. Nothing you type here trains an AI.
+
+**What each feature sees.**
+- *Chatbot (Mentor / Chair / Crisis):* only the messages in that conversation, plus whether you are a rookie or veteran so it can pitch coaching at the right level.
+- *Brief generator:* the country, committee, and topic you enter, plus relevant passages from the team's own archive and alumni interviews.
+- *Team Insights (directors only):* director feedback notes on delegates, used to surface recurring training patterns. It stays on the Director page.
+
+**It can be wrong.** The AI is told to flag anything it is unsure of with "[verify]" and never to invent UN resolution numbers or citations. Treat it as a sharp, fast teammate who is occasionally confidently wrong: always check resolution numbers, citations, and procedure against a primary source before you rely on them.
+
+**It is a coach, not a ghostwriter.** The Mentor is built to help you think, draft, and sharpen your own work, not to hand you a finished speech or paper to submit as your own.
+
+**Cost is capped.** Usage runs under a hard monthly budget with per-person weekly limits, so the tool can never run up a surprise bill.
+"""
+
+
+def ai_disclaimer(text: str) -> None:
+    """A small, on-brand 'this is AI-assisted, verify it' note.
+
+    Rendered on every page where Claude generates content a delegate might lean
+    on. `text` may contain inline HTML (e.g. <strong>) for emphasis.
+    """
+    st.markdown(
+        f"<div class='ai-note'>"
+        f"<span class='ai-note-icon'>{_INFO_ICON_SVG}</span>"
+        f"<span>{text}</span>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def ai_transparency() -> None:
+    """Collapsed explainer of how the AI works and what data it sees."""
+    with st.expander("How the AI works and what it sees"):
+        st.markdown(AI_TRANSPARENCY_MD)
 
 
 def inject_global_css() -> None:
