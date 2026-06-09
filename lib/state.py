@@ -32,6 +32,7 @@ class Conference:
     registration_deadline: str | None = None
     fees_per_delegate_usd: float | None = None
     notes: str | None = None
+    briefs_enabled: bool = False   # director toggle: assigned delegates may generate conference briefs
 
 
 @dataclass
@@ -82,7 +83,13 @@ class Social:
 
 @dataclass
 class Delegation:
-    """An other-school MUN delegation we scout against."""
+    """An other-school MUN delegation we scout against.
+
+    status: "published" entries show on the team-facing Scouting page;
+    "draft" entries (deposited by the scouting content process, see
+    docs/SCOUTING_DRAFTS.md) wait in the Director queue for approve/discard.
+    Entries with no status key are treated as published (pre-drafts data).
+    """
     id: str
     school: str
     strength_level: str = "unknown"    # rising | competitive | strong | dominant | unknown
@@ -90,6 +97,7 @@ class Delegation:
     notable_delegates: list[str] = field(default_factory=list)
     tactical_notes: str = ""
     awards_tendency: str = ""
+    status: str = "published"          # draft | published
     last_updated_at: str | None = None
     last_updated_by: str | None = None
 
@@ -234,6 +242,14 @@ def add_conference(c: Conference) -> None:
         s["conferences"].append(asdict(c))
 
 
+def update_conference(conference_id: str, **fields) -> None:
+    with edit() as s:
+        for entry in s["conferences"]:
+            if entry["id"] == conference_id:
+                entry.update({k: v for k, v in fields.items() if v is not None})
+                return
+
+
 def add_assignment(a: Assignment) -> None:
     with edit() as s:
         s["assignments"].append(asdict(a))
@@ -340,6 +356,18 @@ def feedback_for_delegate(name: str) -> list[dict]:
     return [
         f for f in load().get("feedback", [])
         if f["delegate_name"].strip().lower() == target
+    ]
+
+
+def shared_feedback_for_delegate(name: str) -> list[dict]:
+    """Feedback about this delegate that a director explicitly shared.
+
+    Powers the delegate-facing My Feedback page. Entries default to
+    director_only; nothing surfaces here without the per-entry share toggle.
+    """
+    return [
+        f for f in feedback_for_delegate(name)
+        if f.get("visibility") == "shared_with_delegate"
     ]
 
 
@@ -509,10 +537,19 @@ def remove_delegation(delegation_id: str) -> None:
         state["delegations"] = [d for d in state["delegations"] if d["id"] != delegation_id]
 
 
-def list_delegations() -> list[dict]:
+def list_delegations(*, status: str | None = None) -> list[dict]:
+    """Delegations, sorted by school. `status` filters draft vs published;
+    entries with no status key count as published (pre-drafts data)."""
     rows = list(load().get("delegations", []))
+    if status:
+        rows = [d for d in rows if d.get("status", "published") == status]
     rows.sort(key=lambda d: d.get("school", "").lower())
     return rows
+
+
+def publish_delegation(delegation_id: str, by: str | None = None) -> None:
+    """Approve a draft scouting entry so the team-facing page shows it."""
+    update_delegation(delegation_id, status="published", last_updated_by=by)
 
 
 # ----- finances (admin-only) -----

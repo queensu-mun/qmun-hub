@@ -6,10 +6,12 @@ No em dashes (post-processed and instructed).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Iterator
 
 from lib import state as state_lib
+from lib import store
 from lib.budget import record_call
 from lib.claude import Tier, chat, stream_chat
 
@@ -37,6 +39,71 @@ FEATURE_KEYS = {
     ChatMode.CRISIS_BACKROOM: "chat_crisis",
     ChatMode.CHAIR_ASSISTANT: "chat_chair",
 }
+
+
+# ----- persistent chat history (per user, per mode) -----
+# Stored via lib/store.py (SQLite locally, Postgres `chat_history` table in
+# Supabase mode; see docs/MIGRATION_chat_history.sql). Capped per user per mode
+# so storage and resumed-context cost stay bounded.
+# If the table does not exist yet (migration not run in prod), every function
+# degrades to a no-op so chat still works with session-only history.
+
+HISTORY_TABLE = "chat_history"
+MAX_STORED_MESSAGES = 40
+
+
+def load_history(user_slack_id: str, mode: str) -> list[dict]:
+    """Stored messages for this user + mode, oldest first, capped."""
+    try:
+        rows = store.select_rows(
+            HISTORY_TABLE,
+            where_eq={"user_slack_id": user_slack_id, "mode": mode},
+            order_desc="id",
+            limit=MAX_STORED_MESSAGES,
+        )
+    except Exception:
+        return []
+    rows.reverse()
+    return [{"role": r["role"], "content": r["content"]} for r in rows]
+
+
+def append_history(user_slack_id: str, mode: str, role: str, content: str) -> None:
+    """Persist one message, then trim this user + mode back to the cap."""
+    if not content:
+        return
+    try:
+        store.insert_row(HISTORY_TABLE, {
+            "user_slack_id": user_slack_id,
+            "mode": mode,
+            "role": role,
+            "content": content,
+            "ts": datetime.utcnow().isoformat(),
+        })
+        _trim_history(user_slack_id, mode)
+    except Exception:
+        pass
+
+
+def _trim_history(user_slack_id: str, mode: str) -> None:
+    rows = store.select_rows(
+        HISTORY_TABLE,
+        where_eq={"user_slack_id": user_slack_id, "mode": mode},
+        order_desc="id",
+    )
+    excess_ids = [r["id"] for r in rows[MAX_STORED_MESSAGES:]]
+    if excess_ids:
+        store.delete_rows(
+            HISTORY_TABLE,
+            where_eq={"user_slack_id": user_slack_id, "mode": mode},
+            id_in=excess_ids,
+        )
+
+
+def clear_history(user_slack_id: str, mode: str) -> None:
+    try:
+        store.delete_rows(HISTORY_TABLE, where_eq={"user_slack_id": user_slack_id, "mode": mode})
+    except Exception:
+        pass
 
 
 _NO_EM_DASH_RULE = (

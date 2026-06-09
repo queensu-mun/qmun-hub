@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -448,6 +449,23 @@ with tabs[2]:
                         st.markdown(" ".join(tag(t) for t in f["tags"]), unsafe_allow_html=True)
                     if f.get("conference_id"):
                         st.caption(f"Conference: {conf_lookup_fb.get(f['conference_id'], '?')}")
+
+                    # Per-entry share toggle. Default stays director-only; flipping
+                    # this on surfaces the entry on the delegate's My Feedback page.
+                    shared_now = f.get("visibility") == "shared_with_delegate"
+                    shared_new = st.toggle(
+                        "Visible to delegate",
+                        value=shared_now,
+                        key=f"fb_vis_{f['id']}",
+                        help="When on, this entry appears on the delegate's My Feedback page. Off keeps it director-only.",
+                    )
+                    if shared_new != shared_now:
+                        state_lib.update_feedback(
+                            f["id"],
+                            visibility="shared_with_delegate" if shared_new else "director_only",
+                        )
+                        st.rerun()
+
                     if st.button("Delete", key=f"fb_del_{f['id']}"):
                         state_lib.remove_feedback(f["id"])
                         st.rerun()
@@ -514,7 +532,39 @@ with tabs[3]:
         "this database automatically; for now, add manual entries here."
     )
 
-    delegations = state_lib.list_delegations()
+    # ---- Drafts queue (deposited by the scouting content process) ----
+    drafts = state_lib.list_delegations(status="draft")
+    if drafts:
+        st.markdown(f"#### Drafts awaiting review ({len(drafts)})")
+        st.caption(
+            "Deposited automatically (see docs/SCOUTING_DRAFTS.md). Approve to publish "
+            "to the team-facing Scouting page, or discard. Drafts are never shown to the team."
+        )
+        for d in drafts:
+            with st.container(border=True):
+                head_cols = st.columns([3, 1])
+                head_cols[0].markdown(f"**{d['school']}** &nbsp;{tag('draft', accent=True)} {tag(d.get('strength_level', 'unknown'))}", unsafe_allow_html=True)
+                if d.get("conferences_seen_at"):
+                    head_cols[0].caption("Seen at: " + ", ".join(d["conferences_seen_at"]))
+                if d.get("last_updated_by"):
+                    head_cols[0].caption(f"Submitted by {d['last_updated_by']} on {(d.get('last_updated_at') or '')[:10]}")
+                if d.get("tactical_notes"):
+                    st.markdown(d["tactical_notes"])
+                if d.get("awards_tendency"):
+                    st.caption(f"Awards: {d['awards_tendency']}")
+                if d.get("notable_delegates"):
+                    st.caption("Notable: " + ", ".join(d["notable_delegates"]))
+                draft_cols = st.columns([1.2, 1, 4])
+                if draft_cols[0].button("Approve and publish", key=f"approve_draft_{d['id']}", type="primary"):
+                    state_lib.publish_delegation(d["id"], by=user.name)
+                    st.success("Published.")
+                    st.rerun()
+                if draft_cols[1].button("Discard", key=f"discard_draft_{d['id']}"):
+                    state_lib.remove_delegation(d["id"])
+                    st.rerun()
+        st.divider()
+
+    delegations = state_lib.list_delegations(status="published")
 
     # Quick filter
     if delegations:
@@ -655,6 +705,18 @@ with tabs[4]:
 """,
                 unsafe_allow_html=True,
             )
+            # Per-conference brief gate. Default off: delegates assigned to this
+            # conference only see Conference depth on the Brief page once this is on.
+            briefs_on = bool(c.get("briefs_enabled"))
+            briefs_new = st.toggle(
+                "Conference briefs enabled",
+                value=briefs_on,
+                key=f"conf_briefs_{c['id']}",
+                help="When on, delegates assigned to this conference can generate full conference briefs. Execs always can.",
+            )
+            if briefs_new != briefs_on:
+                state_lib.update_conference(c["id"], briefs_enabled=briefs_new)
+                st.rerun()
     else:
         st.caption("No conferences yet.")
 
@@ -743,6 +805,62 @@ with tabs[5]:
 with tabs[6]:
     st.markdown("### Archive curation")
     st.caption("Mark documents as exemplary (boost in retrieval), outdated (deprioritize), or exec-only (hide from delegates).")
+
+    # ---- Reindex: upload docs + one-click ingest, no SSH needed ----
+    from lib.ingest import INCOMING_DIR, ingest_folder
+
+    with st.container(border=True):
+        st.markdown("#### Reindex archive")
+        st.caption(
+            "Indexes every .md / .pdf / .docx in `data/incoming` into the searchable archive "
+            "(chunk, embed, upsert). Re-running re-indexes changed files in place. "
+            "Upload below or drop files in the folder, then click once."
+        )
+
+        new_files = st.file_uploader(
+            "Add documents to data/incoming",
+            type=["md", "pdf", "docx"],
+            accept_multiple_files=True,
+            key="curation_incoming_upload",
+        )
+        if new_files and st.button("Save uploads to data/incoming", key="curation_save_uploads"):
+            INCOMING_DIR.mkdir(parents=True, exist_ok=True)
+            for f in new_files:
+                safe_name = Path(f.name).name
+                (INCOMING_DIR / safe_name).write_bytes(f.getvalue())
+            st.success(f"Saved {len(new_files)} file(s). Now click Reindex archive.")
+
+        reindex_running = st.session_state.get("reindex_running", False)
+        if st.button("Reindex archive", type="primary", disabled=reindex_running, key="reindex_btn"):
+            st.session_state["reindex_running"] = True
+            st.rerun()
+
+        if reindex_running:
+            try:
+                with st.status("Reindexing archive...", expanded=True) as status_box:
+                    result = ingest_folder(INCOMING_DIR, log=status_box.write)
+                    status_box.update(label="Reindex finished.", state="complete")
+            except Exception as e:
+                result = {"indexed": [], "skipped": [], "errors": [f"Reindex failed: {e}"],
+                          "total_chunks": 0, "stats": None}
+            finally:
+                st.session_state["reindex_running"] = False
+            st.session_state["reindex_result"] = result
+            clear_search_cache()
+            st.rerun()
+
+        last_run = st.session_state.get("reindex_result")
+        if last_run:
+            n_ok = len(last_run["indexed"])
+            summary = f"Indexed {n_ok} doc{'s' if n_ok != 1 else ''} ({last_run['total_chunks']} chunks)."
+            if last_run["stats"]:
+                summary += f" Archive now: {last_run['stats']['n_docs']} docs / {last_run['stats']['n_chunks']} chunks."
+            if n_ok:
+                st.success(summary)
+            for fname, reason in last_run["skipped"]:
+                st.warning(f"Skipped {fname}: {reason}")
+            for err in last_run["errors"]:
+                st.error(err)
 
     docs = list_docs()
     if not docs:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from lib import state as state_lib
 from lib.auth import require_login
 from lib.brief import BriefRequest, generate_streaming
 from lib.budget import current_monthly
@@ -22,6 +23,22 @@ ai_disclaimer(
 )
 ai_transparency()
 
+# Conference depth is gated: execs/admins always see it; a delegate sees it only
+# when assigned to a conference whose director toggle (briefs_enabled) is on.
+def _conference_briefs_unlocked(u) -> bool:
+    if u.is_exec:
+        return True
+    for a in state_lib.assignments_for_delegate(u.name):
+        if (a.get("conference") or {}).get("briefs_enabled"):
+            return True
+    return False
+
+
+conference_unlocked = _conference_briefs_unlocked(user)
+depth_options = ["Mock (one page)"]
+if conference_unlocked:
+    depth_options.append("Conference (full)")
+
 # Compact form: country + committee + depth on one row, topic below, notes optional
 seeded_topic = st.session_state.pop("brief_seed_topic", "")
 
@@ -33,10 +50,12 @@ with cols[1]:
 with cols[2]:
     depth_label = st.selectbox(
         "Depth",
-        ["Mock (one page)", "Conference (full)"],
+        depth_options,
         help="Mock takes ~10s; conference takes ~60s and pulls more detail.",
     )
     depth = "mock" if depth_label.startswith("Mock") else "conference"
+    if not conference_unlocked:
+        st.caption("Conference briefs unlock when you're assigned and your director enables them.")
 
 topic = st.text_input(
     "Topic",

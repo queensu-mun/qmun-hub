@@ -17,7 +17,8 @@ page_header(
     "Built from alumni intel and director observations. Know who you're sitting across from.",
 )
 
-delegations = state_lib.list_delegations()
+# Published only: drafts wait in the Director -> Scouting queue.
+delegations = state_lib.list_delegations(status="published")
 
 if not delegations:
     st.markdown(

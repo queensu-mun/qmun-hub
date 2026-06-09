@@ -1038,9 +1038,10 @@ def top_nav(user) -> None:
                    ("Archive",    "pages/1_Archive.py")]),
         ("Learn", [("Chatbot",    "pages/3_Chatbot.py"),
                    ("Training",   "pages/4_Training.py")]),
-        ("Team",  [("Socials",    "pages/7_Socials.py"),
-                   ("Scouting",   "pages/8_Scouting.py"),
-                   ("Contribute", "pages/6_Alumni_Interview.py")]),
+        ("Team",  [("Socials",     "pages/7_Socials.py"),
+                   ("Scouting",    "pages/8_Scouting.py"),
+                   ("My Feedback", "pages/9_My_Feedback.py"),
+                   ("Contribute",  "pages/6_Alumni_Interview.py")]),
     ]
     if user.is_exec:
         GROUPS.append(("Admin", [("Director", "pages/5_Director.py")]))

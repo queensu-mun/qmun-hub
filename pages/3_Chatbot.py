@@ -9,6 +9,9 @@ from lib.chat import (
     ChatMode,
     CrisisScenario,
     FEATURE_KEYS,
+    append_history,
+    clear_history,
+    load_history,
     stream_respond,
 )
 from lib.ui import ai_disclaimer, ai_transparency, brand_footer, inject_global_css, page_header, top_nav
@@ -100,7 +103,8 @@ with rail_col:
                 st.success("Saved.")
 
     if st.button("Clear conversation", use_container_width=True):
-        st.session_state.pop("chat_history_by_mode", None)
+        st.session_state.get("chat_history_by_mode", {}).pop(selected.value, None)
+        clear_history(user.slack_id, selected.value)
         st.rerun()
 
 with chat_col:
@@ -108,6 +112,32 @@ with chat_col:
         st.session_state["chat_history_by_mode"] = {}
     history_key = selected.value
     history = st.session_state["chat_history_by_mode"].setdefault(history_key, [])
+
+    # Offer to resume the persisted conversation, once per mode per session.
+    resume_flag = f"chat_resume_decided_{history_key}"
+    if not history and not st.session_state.get(resume_flag):
+        stored = load_history(user.slack_id, history_key)
+        if stored:
+            st.info("You have a previous conversation in this mode.")
+            resume_cols = st.columns([1.4, 1, 2])
+            if resume_cols[0].button(
+                "Resume previous conversation",
+                key=f"chat_resume_{history_key}",
+                use_container_width=True,
+            ):
+                st.session_state["chat_history_by_mode"][history_key] = stored
+                st.session_state[resume_flag] = True
+                st.rerun()
+            if resume_cols[1].button(
+                "Start fresh",
+                key=f"chat_fresh_{history_key}",
+                use_container_width=True,
+            ):
+                clear_history(user.slack_id, history_key)
+                st.session_state[resume_flag] = True
+                st.rerun()
+        else:
+            st.session_state[resume_flag] = True
 
     for msg in history:
         with st.chat_message(msg["role"]):
@@ -124,7 +154,14 @@ with chat_col:
             st.error(msg)
             st.stop()
 
+        # Typing past an undecided resume banner means "start fresh".
+        if not st.session_state.get(resume_flag):
+            if not history:
+                clear_history(user.slack_id, history_key)
+            st.session_state[resume_flag] = True
+
         history.append({"role": "user", "content": prompt})
+        append_history(user.slack_id, history_key, "user", prompt)
         with st.chat_message("user"):
             st.markdown(prompt)
 
@@ -157,6 +194,7 @@ with chat_col:
                     cost = c
 
             history.append({"role": "assistant", "content": accumulated})
+            append_history(user.slack_id, history_key, "assistant", accumulated)
             if cost > 0:
                 st.caption(f"_${cost:.5f}_")
 

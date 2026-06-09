@@ -40,6 +40,20 @@ create table if not exists briefs (
 );
 create index if not exists idx_briefs_created on briefs (created_at);
 
+-- chat_history : persistent chatbot history, one row per message per user per
+-- mode (lib/chat.py). The app trims each user+mode to 40 messages on insert.
+-- Added 2026-06: existing deployments apply docs/MIGRATION_chat_history.sql.
+
+create table if not exists chat_history (
+    id            bigserial primary key,
+    user_slack_id text not null,
+    mode          text not null,
+    role          text not null,
+    content       text not null,
+    ts            text not null
+);
+create index if not exists idx_chat_history_user_mode on chat_history (user_slack_id, mode, id);
+
 -- archive_docs / archive_chunks : the searchable knowledge base (lib/index.py).
 -- Committed archive.db seeds local dev; in Supabase mode these tables hold the
 -- archive so docs indexed after deploy (alumni interviews, director uploads)
@@ -77,5 +91,6 @@ create index if not exists idx_archive_chunks_doc on archive_chunks (doc_id);
 alter table team_state     enable row level security;
 alter table usage          enable row level security;
 alter table briefs         enable row level security;
+alter table chat_history   enable row level security;
 alter table archive_docs   enable row level security;
 alter table archive_chunks enable row level security;

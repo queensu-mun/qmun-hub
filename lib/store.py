@@ -66,6 +66,15 @@ CREATE TABLE IF NOT EXISTS briefs (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_briefs_created ON briefs(created_at);
+CREATE TABLE IF NOT EXISTS chat_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_slack_id TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    ts TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_history_user_mode ON chat_history(user_slack_id, mode, id);
 """
 
 
@@ -244,6 +253,33 @@ def select_rows(
         params.append(limit)
     with _local_conn() as c:
         return [dict(r) for r in c.execute(sql, tuple(params)).fetchall()]
+
+
+def delete_rows(table: str, *, where_eq: dict | None = None, id_in: list | None = None) -> None:
+    """Delete rows matching equality filters and/or an explicit id list.
+
+    Refuses to run with no filters at all: a bare DELETE on a whole table is
+    never what callers here want.
+    """
+    if not where_eq and not id_in:
+        return
+    if backend() == "supabase":
+        q = _client().table(table).delete()
+        for col, val in (where_eq or {}).items():
+            q = q.eq(col, val)
+        if id_in:
+            q = q.in_("id", id_in)
+        q.execute()
+        return
+    clauses, params = [], []
+    for col, val in (where_eq or {}).items():
+        clauses.append(f"{col} = ?")
+        params.append(val)
+    if id_in:
+        clauses.append(f"id IN ({', '.join('?' for _ in id_in)})")
+        params.extend(id_in)
+    with _local_conn() as c:
+        c.execute(f"DELETE FROM {table} WHERE " + " AND ".join(clauses), tuple(params))
 
 
 # --------------------------------------------------------------------------

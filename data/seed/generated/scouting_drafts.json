@@ -1,0 +1,99 @@
+[
+  {
+    "school": "McGill University",
+    "strength": "Strongest Canadian program on the circuit; top-10 North American team and our primary domestic rival",
+    "conferences": ["McMUN (host)", "NCSC", "BarMUN", "UPMUNC"],
+    "notes": "VERIFIED: Best Delegate ranked McGill #10 in the fall 2024 mid-year North American rankings on the strength of outings at BarMUN and NCSC, described as the fall's toughest conferences. A McGill Delegation Team post congratulates their NCSC delegation for winning Best Small Delegation, indicating they compete in the small bracket like Queen's, which makes them our most direct comparison team. They host McMUN (1,000+ delegates, voted best conference of 2024-25 by Delegate's Choice). INFERENCE: as McMUN hosts their core competitors do not compete at their own conference, so their travel team strength shows at US fall conferences; expect polished crisis delegates given NCSC results.",
+    "sources": [
+      "https://bestdelegate.com/fall-2024-north-american-college-model-un-rankings-through-mcmun/",
+      "https://www.facebook.com/McGillDelegationTeam/posts/a-huge-congratulations-to-the-whole-ncsc-delegation-for-bringing-home-the-best-s/1205244149870926/",
+      "https://bestdelegate.com/2024-2025-delegates-choice-for-best-conferences-and-teams/"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "Georgetown University",
+    "strength": "Elite, format-versatile top-tier program; wins delegation awards across every committee style",
+    "conferences": ["NCSC (host)", "McMUN", "UPMUNC", "HNMUN", "BarMUN", "MUNE", "VICS", "ChoMUN", "SCSY"],
+    "notes": "VERIFIED: Best Delegate's 2024-25 season coverage says GUMUN won six delegation awards and succeeded across all committee styles and formats; their delegate Emma Wong won eight gavels in one season at MUNE, BarMUN, UPMUNC, McMUN, HNMUN, VICS, &MUN, and ChoMUN. Georgetown hosts NCSC through GIRA so they do not compete there. INFERENCE: expect their strongest individuals in advanced and crisis rooms at McMUN and UPMUNC; their breadth means there is no soft format to attack them in.",
+    "sources": [
+      "https://bestdelegate.com/2024-2025-north-american-college-all-star-team/",
+      "https://ncsc.modelun.org/gumun"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "University of Chicago",
+    "strength": "Large-delegation powerhouse, dominant in fall semester; sweeps Best Large Delegation at majors",
+    "conferences": ["UPMUNC", "NCSC", "SCSY", "HNMUN", "ChoMUN (host)"],
+    "notes": "VERIFIED: Best Delegate reported UChicago dominated the first half of the 2024-25 season, winning Best Large Delegation at UPMUNC, NCSC, and Yale SCSY, and Outstanding Large Delegation at Harvard HNMUN. INFERENCE: they compete in the Large bracket (12+ delegates), so they are not direct competition for Queen's small-delegation awards at NCSC, but their individuals set the bar in the crisis rooms we sit in. They host ChoMUN in spring, a crisis-focused conference, suggesting deep crisis training culture.",
+    "sources": [
+      "https://bestdelegate.com/2024-2025-north-american-college-model-u-n-final-rankings-world-division/"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "Harvard University",
+    "strength": "Top-five North American program with deep talent and its own major conference (HNMUN)",
+    "conferences": ["HNMUN (host)", "UPMUNC", "NCSC", "McMUN"],
+    "notes": "VERIFIED: Best Delegate's 2024-25 final rankings coverage notes Harvard barely edged West Point to make the top five on the strength of awards won. They host HNMUN, one of the circuit's largest collegiate conferences. INFERENCE: their exact conference schedule beyond hosting was not confirmed in our searches; the conferences listed besides HNMUN are inferred from standard top-five circuit behavior. Expect strong GA and ECOSOC fundamentals given HNMUN's traditional-committee culture.",
+    "sources": [
+      "https://bestdelegate.com/2024-2025-north-american-college-model-u-n-final-rankings-world-division/"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "United States Military Academy (West Point)",
+    "strength": "Top-ten caliber team that pushed Harvard for a top-five final ranking; disciplined and well-drilled",
+    "conferences": ["NCSC", "McMUN", "UPMUNC"],
+    "notes": "VERIFIED: Best Delegate's 2024-25 final rankings coverage says Harvard barely edged West Point for the final top-five spot, confirming West Point is an elite ranked program this season. INFERENCE: specific conference appearances were not individually confirmed in our searches; security-focused conferences like NCSC fit their institutional profile and they are regularly discussed as a crisis-strong program. Expect highly coordinated delegation-level discipline; their delegates tend to run structured, mission-style crisis arcs.",
+    "sources": [
+      "https://bestdelegate.com/2024-2025-north-american-college-model-u-n-final-rankings-world-division/"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "American University",
+    "strength": "The #1 program in North America four seasons running; the most individual awards, gavels, and delegation awards on the circuit",
+    "conferences": ["McMUN", "NCSC", "UPMUNC", "HNMUN", "BarMUN"],
+    "notes": "VERIFIED: American University topped the Best Delegate North American final rankings for the fourth consecutive year in 2024-25, the first four-peat ever, beating Georgetown, FIU, Claremont McKenna, and Boston University. Earlier-season coverage had AU leading the circuit in individual awards, gavels, and delegation awards through McMUN, confirming they compete at McMUN. INFERENCE: they convert via volume plus depth (large roster, awards in every room type). When AU is at a conference, Large bracket delegation awards are usually spoken for; our path is the Small bracket and individual awards.",
+    "sources": [
+      "https://www.american.edu/sis/news/20250702-au-model-un-team-notches-history-making-four-peat.cfm",
+      "https://bestdelegate.com/fall-2024-north-american-college-model-un-rankings-through-mcmun/"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "Florida State University",
+    "strength": "Rising ranked program with a strong NCSC showing; aggressive multi-conference fall schedule",
+    "conferences": ["NCSC", "AIRMUNC", "DawgMUN"],
+    "notes": "VERIFIED: Best Delegate coverage says Florida State lit up the scoreboard at AIRMUNC, DawgMUN, and NCSC, finishing 5th at NCSC by Best Delegate's methodology. INFERENCE: their NCSC strength implies solid crisis delegates; they appear to build ranking points partly at softer regional conferences, so their NCSC-level performance is the relevant benchmark for us. We mainly see them at NCSC.",
+    "sources": [
+      "https://bestdelegate.com/fall-2024-north-american-college-model-un-rankings-through-mcmun/"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "Western University",
+    "strength": "Established Canadian program and regular McMUN attendee; domestic rival in our weight class",
+    "conferences": ["McMUN", "WESMUN (host)"],
+    "notes": "VERIFIED: Western Model United Nations was established in 1997, attends external conferences across Canada including McMUN, and hosts its own flagship event WESMUN, which has grown to over two hundred regular attendees. No evidence found of Western appearing in Best Delegate North American rankings or winning delegation awards at majors in recent coverage. INFERENCE: a participation-oriented program rather than a ranked competitive one; at McMUN they are a winnable head-to-head for Queen's delegates and a potential bloc partner among Canadian schools.",
+    "sources": [
+      "https://www.facebook.com/UWOMUN/",
+      "https://ca.linkedin.com/company/uwomun"
+    ],
+    "status": "draft"
+  },
+  {
+    "school": "University of Toronto",
+    "strength": "Large MUN ecosystem (hosts UTMUN and NAMUN) but unconfirmed competitive travel results at circuit majors",
+    "conferences": ["McMUN (likely)", "UTMUN (host, high school)", "NAMUN (host)"],
+    "notes": "VERIFIED: U of T hosts UTMUN, a four-day February conference for high school students drawing 500+, and NAMUN is hosted at the University of Toronto and described as Canada's oldest annual university-level MUN conference (founded 1985). NOT VERIFIED: we found no recent Best Delegate ranking entries or delegation award results for a U of T travel team at NCSC, UPMUNC, or McMUN. INFERENCE: their organizational energy goes into hosting; their travel presence at McMUN is likely given proximity but unconfirmed, and they should be scouted in person at McMUN before we treat them as a competitive threat.",
+    "sources": [
+      "https://www.utmun.org/",
+      "https://www.utmun.org/faq/",
+      "https://unsociety.com/conferences/"
+    ],
+    "status": "draft"
+  }
+]
