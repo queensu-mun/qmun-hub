@@ -83,35 +83,71 @@ def _drive_secrets() -> dict:
     return {}
 
 
+def _has_credentials(s: dict) -> bool:
+    """True if any supported credential form is present.
+
+    Three forms, in priority order:
+    - `service_account_info`: a TOML table (Streamlit Cloud-friendly: paste the
+      JSON's fields as a nested `[google.service_account_info]` section).
+    - `service_account_json`: the raw JSON key as a single string.
+    - `service_account_path`: a path to a JSON key file (local dev).
+    """
+    return bool(
+        s.get("service_account_info")
+        or s.get("service_account_json")
+        or s.get("service_account_path")
+    )
+
+
 def _is_configured() -> bool:
     s = _drive_secrets()
-    return bool(s.get("service_account_path")) and bool(s.get("shared_drive_folder_id"))
+    return _has_credentials(s) and bool(s.get("shared_drive_folder_id"))
 
 
 # ----------------------- Drive service factory -----------------------
 
 
+_SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+
+
+def _load_credentials(s: dict) -> Any:
+    """Build service-account Credentials from whichever form is configured."""
+    from google.oauth2 import service_account
+
+    info = s.get("service_account_info")
+    if info:
+        return service_account.Credentials.from_service_account_info(
+            dict(info), scopes=_SCOPES
+        )
+
+    raw = s.get("service_account_json")
+    if raw:
+        import json
+        return service_account.Credentials.from_service_account_info(
+            json.loads(raw), scopes=_SCOPES
+        )
+
+    sa_path = s["service_account_path"]
+    if not Path(sa_path).is_absolute():
+        sa_path = ROOT / sa_path
+    return service_account.Credentials.from_service_account_file(str(sa_path), scopes=_SCOPES)
+
+
 @lru_cache(maxsize=1)
 def _drive_service() -> Any:
-    """Build a Drive v3 service from the configured service account JSON.
+    """Build a Drive v3 service from the configured service account credentials.
 
     Raises RuntimeError if Drive isn't configured (use `_is_configured()` to gate).
     """
     if not _is_configured():
         raise RuntimeError(
-            "Google Drive isn't configured. Set [google].service_account_path "
-            "and [google].shared_drive_folder_id in .streamlit/secrets.toml."
+            "Google Drive isn't configured. Set a [google] credential "
+            "(service_account_info / service_account_json / service_account_path) "
+            "and shared_drive_folder_id in .streamlit/secrets.toml."
         )
-    from google.oauth2 import service_account
     from googleapiclient.discovery import build
 
-    sa_path = _drive_secrets()["service_account_path"]
-    if not Path(sa_path).is_absolute():
-        sa_path = ROOT / sa_path
-    creds = service_account.Credentials.from_service_account_file(
-        str(sa_path),
-        scopes=["https://www.googleapis.com/auth/drive.readonly"],
-    )
+    creds = _load_credentials(_drive_secrets())
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 

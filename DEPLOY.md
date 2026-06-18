@@ -90,8 +90,10 @@ To add/remove admins or execs later, edit these lists in the Streamlit Cloud
 Secrets panel; saving auto-reboots the app. Keep local
 `.streamlit/secrets.toml` in sync.
 
-Leave out `[slack]` and `[google]` entirely — both are deferred, and the app
-degrades gracefully to the pilot gate when Slack OAuth isn't configured.
+Leave out `[slack]` entirely — it's deferred, and the app degrades gracefully to
+the pilot gate when Slack OAuth isn't configured. `[google]` is optional too: leave
+it out to keep Drive sync off (the Director button just shows setup steps). To turn
+Drive sync on, see **Drive sync** below.
 
 Save. The app restarts with secrets applied.
 
@@ -104,6 +106,53 @@ Save. The app restarts with secrets applied.
 - Submit a test **Alumni Interview**: it indexes and becomes searchable, and it
   will still be there after the next redeploy (this is the whole point of the
   Supabase archive migration).
+
+---
+
+## Drive sync (optional)
+
+Lets an admin pull the team Google Drive folder straight into the archive, from the
+**Director -> Curation -> "Sync from Drive"** button (or `python scripts/sync_drive.py`).
+Read-only. The app authenticates as a **service account** (a robot Google identity),
+not as a person, so no one has to stay logged in.
+
+One-time setup (you do this once; the app can't create credentials for you):
+
+1. **Create the service account.** In the Google Cloud console
+   (`console.cloud.google.com`), pick or create a project, go to **APIs & Services
+   -> Enable APIs** and enable the **Google Drive API**. Then **IAM & Admin ->
+   Service Accounts -> Create service account** (name it e.g. `qmun-drive`). No
+   project roles are needed — access is granted by folder-sharing, not IAM.
+2. **Download a key.** On the new service account: **Keys -> Add key -> Create new
+   key -> JSON**. A `.json` file downloads. It contains a `client_email` like
+   `qmun-drive@PROJECT.iam.gserviceaccount.com` and a private key. Treat it like a
+   password.
+3. **Share the team folder with the robot.** In Drive, open the team's master MUN
+   folder, **Share**, and add that `client_email` as **Viewer**. (The folder can
+   live in any Google account — sharing is cross-account.) Sharing a folder shares
+   everything under it.
+4. **Get the folder id.** It's the last path segment of the folder URL:
+   `drive.google.com/drive/folders/<THIS_IS_THE_ID>`.
+5. **Put both in secrets.** Add a `[google]` section (see
+   `.streamlit/secrets.toml.example`). On Streamlit Cloud you can't upload a file,
+   so paste the key inline as `service_account_json = '''<the JSON>'''` (or a
+   `[google.service_account_info]` table) plus `shared_drive_folder_id = "<id>"`.
+   Locally you can instead point `service_account_path` at the `.json` file.
+
+Then: open **Director -> Curation**, click **Sync from Drive**. The first run is a
+full pull; later runs only fetch files changed since the last sync (tick "Full
+re-pull" to override). On a deployed (Supabase) setup the docs land straight in the
+live archive. To run it from your machine against the live archive instead of the
+button, `python scripts/sync_drive.py` while in Supabase mode.
+
+Notes:
+- Supported types: Google Docs, PDF, Word (`.docx`). Other files in the folder are
+  ignored. doc_type is inferred from the filename (working paper -> position_paper,
+  guide/background -> background_guide, agenda/minutes -> director_note, etc.); fix
+  any mislabels with the per-doc controls in the same Curation tab.
+- The service-account key is **another long-lived secret in the cloud app**. Scope
+  it read-only (done above) and rotate it on the same schedule as the other keys.
+- Streamlit Cloud has no scheduler, so sync runs on button-click, not overnight.
 
 ---
 

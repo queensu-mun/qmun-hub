@@ -806,6 +806,70 @@ with tabs[6]:
     st.markdown("### Archive curation")
     st.caption("Mark documents as exemplary (boost in retrieval), outdated (deprioritize), or exec-only (hide from delegates).")
 
+    # ---- Sync from Drive: pull the team folder straight into the archive ----
+    from lib import drive_sync
+
+    with st.container(border=True):
+        st.markdown("#### Sync from Drive")
+        if not drive_sync.is_configured():
+            st.caption(
+                "Pull documents straight from the team Google Drive folder into the "
+                "searchable archive. Not connected yet."
+            )
+            st.info(
+                "To connect: a Google Cloud **service account** key and the team folder id go "
+                "in the app's secrets under `[google]`, and the folder is shared with the "
+                "service account's email. Setup steps are in `DEPLOY.md`. Until then, use "
+                "**Reindex archive** below to upload files by hand."
+            )
+        else:
+            last = drive_sync.last_sync()
+            st.caption(
+                "Pull every supported doc (Google Docs, PDF, Word) from the team Drive folder "
+                "into the archive. Re-running re-indexes changed files in place."
+                + (f" Last sync: {last.strftime('%Y-%m-%d %H:%M UTC')}." if last else " Never synced yet.")
+            )
+            full_resync = st.checkbox(
+                "Full re-pull (ignore last-sync, re-index everything)",
+                key="drive_full_resync",
+            )
+            drive_running = st.session_state.get("drive_sync_running", False)
+            if st.button("Sync from Drive", type="primary", disabled=drive_running, key="drive_sync_btn"):
+                st.session_state["drive_sync_running"] = True
+                st.rerun()
+
+            if drive_running:
+                try:
+                    with st.status("Syncing from Drive...", expanded=True) as status_box:
+                        result = drive_sync.sync_drive(
+                            full=st.session_state.get("drive_full_resync", False),
+                            log=status_box.write,
+                        )
+                        status_box.update(label="Drive sync finished.", state="complete")
+                except Exception as e:
+                    result = {"indexed": [], "skipped": [], "errors": [f"Drive sync failed: {e}"],
+                              "total_chunks": 0, "stats": None, "synced_at": None}
+                finally:
+                    st.session_state["drive_sync_running"] = False
+                st.session_state["drive_sync_result"] = result
+                clear_search_cache()
+                st.rerun()
+
+            last_sync_run = st.session_state.get("drive_sync_result")
+            if last_sync_run:
+                n_ok = len(last_sync_run["indexed"])
+                summary = f"Synced {n_ok} doc{'s' if n_ok != 1 else ''} ({last_sync_run['total_chunks']} chunks)."
+                if last_sync_run["stats"]:
+                    summary += f" Archive now: {last_sync_run['stats']['n_docs']} docs / {last_sync_run['stats']['n_chunks']} chunks."
+                if n_ok:
+                    st.success(summary)
+                elif not last_sync_run["errors"]:
+                    st.info("No changed files since last sync.")
+                for fname, reason in last_sync_run["skipped"]:
+                    st.warning(f"Skipped {fname}: {reason}")
+                for err in last_sync_run["errors"]:
+                    st.error(err)
+
     # ---- Reindex: upload docs + one-click ingest, no SSH needed ----
     from lib.ingest import INCOMING_DIR, ingest_folder
 
