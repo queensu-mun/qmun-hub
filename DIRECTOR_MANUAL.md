@@ -105,8 +105,8 @@ The goal: nothing critical lives only on one person's laptop. Each piece has a c
 | **Code** | GitHub `github.com/jtguillemette/qmun-hub` | Auto-deploys to Streamlit Cloud on push to `main`. Currently under the original Director's PERSONAL account. Transfer to a team org is PENDING (see handoff). |
 | **Live app** | `queensmun.streamlit.app` | The deployed pilot. Rebuilds from `main`. |
 | **Live archive data** | Supabase (Postgres) | 125 docs / 1812 chunks at last seed. This is production's source of truth at runtime, independent of any laptop or Drive. Connection + service key in `secrets.toml` under `[supabase]`. |
-| **Source documents (backup)** | Team Drive: "MUN Hub — Live Archive Source" | The curated files that were ingested (background guides, training, sample papers). A copy also sits locally at `data/drive_seed/{bg,guides,samples}/`. |
-| **Director-only documents** | Team Drive: "MUN Hub — Director Only" | Transition/handoff manuals. Director-eyes-only by rule; kept OUT of the team-facing archive. Local copy at `data/drive_seed/_director_only/`. |
+| **Source documents (backup)** | Team Drive: "MUN Hub: Live Archive Source" | The curated files that were ingested (background guides, training, sample papers). A copy also sits locally at `data/drive_seed/{bg,guides,samples}/`. |
+| **Director-only documents** | Team Drive: "MUN Hub: Director Only" | Transition/handoff manuals. Director-eyes-only by rule; kept OUT of the team-facing archive. Local copy at `data/drive_seed/_director_only/`. |
 | **API keys** | `secrets.toml` (local) + Streamlit Cloud Secrets dashboard | Anthropic, Voyage, Supabase. NEVER committed to git, NEVER put on Drive. The `secrets.toml.example` in the repo documents the shape without values. |
 | **Budget workbook** | Native Google Sheet (team Drive) | The Director edits it directly. `budget/build_budget.py` is a retired generator; do not rebuild over manual edits. |
 
