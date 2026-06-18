@@ -155,22 +155,27 @@ def _scrub_em_dashes(text: str) -> str:
     return text
 
 
-def _alumni_brief_context(query: str, max_passages: int = 2) -> str:
-    """Pull relevant alumni-interview wisdom for the committee/topic. Backend-only
-    (these docs aren't browsable in the Archive) but they sharpen the brief."""
+def _archive_brief_context(query: str, max_passages: int = 3) -> str:
+    """Pull the most relevant passages from the team archive (background guides,
+    sample position papers, training material, alumni wisdom) to ground the brief
+    in how Queen's actually prepares committees like this one."""
     if not query.strip():
         return ""
     try:
         from lib.search import retrieve_passages
-        passages = retrieve_passages(query, doc_types=["alumni_interview"], top_k=max_passages)
+        passages = retrieve_passages(
+            query,
+            doc_types=["background_guide", "position_paper", "training", "alumni_interview"],
+            top_k=max_passages,
+        )
     except Exception:
         return ""
     if not passages:
         return ""
     blocks = [f'From "{p.doc_title}":\n{p.text.strip()}' for p in passages]
     return (
-        "\n\n--- INSTITUTIONAL KNOWLEDGE (what Queen's alumni have shared about committees "
-        "like this; weave in any relevant tactical or conference-specific insight) ---\n"
+        "\n\n--- QUEEN'S ARCHIVE (how this team has prepped, written, and argued committees "
+        "like this; weave in any relevant tactical, structural, or conference-specific insight) ---\n"
         + "\n\n".join(blocks)
     )
 
@@ -185,8 +190,8 @@ def _build_user_message(req: BriefRequest) -> str:
         parts.append(f"**Director / delegate notes:** {req.notes}")
     parts.append("\nGenerate the brief.")
     msg = "\n".join(parts)
-    alumni = _alumni_brief_context(f"{req.committee} {req.topic}")
-    return msg + alumni
+    archive = _archive_brief_context(f"{req.committee} {req.topic}")
+    return msg + archive
 
 
 def generate(req: BriefRequest, *, force_refresh: bool = False) -> Brief:

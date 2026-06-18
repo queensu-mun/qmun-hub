@@ -323,36 +323,49 @@ def _scrub(text: str) -> str:
     return text.replace(" — ", ", ").replace(" – ", ", ").replace("—", "-").replace("–", "-")
 
 
-def _alumni_context(query: str, max_passages: int = 3) -> str:
-    """Retrieve relevant alumni-interview passages to ground the mentor's advice.
-
-    Backend-only: alumni interviews are not browsable in the Archive, but their
-    wisdom feeds the mentor here.
+def _archive_context(query: str, doc_types: list[str], max_passages: int = 3) -> str:
+    """Retrieve the most relevant passages from the team archive (training material,
+    background guides, sample position papers, alumni wisdom) to ground a chatbot
+    reply in how Queen's actually does MUN. The caller scopes doc_types by mode.
     """
     if not query:
         return ""
     try:
         from lib.search import retrieve_passages
-        passages = retrieve_passages(query, doc_types=["alumni_interview"], top_k=max_passages)
+        passages = retrieve_passages(
+            query,
+            doc_types=doc_types,
+            top_k=max_passages,
+        )
     except Exception:
         return ""
     if not passages:
         return ""
     blocks = [f'From "{p.doc_title}":\n{p.text.strip()}' for p in passages]
     return (
-        "\n\n--- WHAT QUEEN'S ALUMNI HAVE SHARED (institutional knowledge; draw on it "
-        "and attribute the person when you lean on a specific story or claim) ---\n"
+        "\n\n--- QUEEN'S ARCHIVE (the team's own training, guides, sample papers, and alumni "
+        "knowledge; draw on it and name the source when you lean on a specific claim or story) ---\n"
         + "\n\n".join(blocks)
-        + "\n--- END INSTITUTIONAL KNOWLEDGE ---"
+        + "\n--- END ARCHIVE ---"
     )
 
 
-def _augment_mentor_history(mode: ChatMode, history: list[dict]) -> list[dict]:
-    """For MENTOR mode, append retrieved alumni wisdom to the latest user turn.
+# Which archive doc_types each retrieval-grounded mode draws on. Crisis Backroom
+# is intentionally absent: it runs freeform and shouldn't be anchored to docs.
+_MODE_RETRIEVAL_DOC_TYPES: dict[ChatMode, list[str]] = {
+    ChatMode.MENTOR: ["training", "background_guide", "position_paper", "alumni_interview"],
+    ChatMode.CHAIR_ASSISTANT: ["training", "background_guide"],
+}
+
+
+def _augment_history_with_archive(mode: ChatMode, history: list[dict]) -> list[dict]:
+    """For retrieval-grounded modes, append relevant archive passages to the latest
+    user turn. Scope of docs is mode-specific (see _MODE_RETRIEVAL_DOC_TYPES).
 
     Kept out of the (cached) system prompt so prompt caching still works.
     """
-    if mode != ChatMode.MENTOR or not history:
+    doc_types = _MODE_RETRIEVAL_DOC_TYPES.get(mode)
+    if not doc_types or not history:
         return history
     last_user_idx = next(
         (i for i in range(len(history) - 1, -1, -1) if history[i].get("role") == "user"),
@@ -360,7 +373,7 @@ def _augment_mentor_history(mode: ChatMode, history: list[dict]) -> list[dict]:
     )
     if last_user_idx is None:
         return history
-    ctx = _alumni_context(history[last_user_idx].get("content", ""))
+    ctx = _archive_context(history[last_user_idx].get("content", ""), doc_types)
     if not ctx:
         return history
     aug = [dict(m) for m in history]
@@ -379,7 +392,7 @@ def respond(
     """Return (assistant_text, cost_usd). Records call to budget."""
     system = _system_for(mode, scenario, delegate_name)
     tier = _tier_for(mode)
-    history = _augment_mentor_history(mode, history)
+    history = _augment_history_with_archive(mode, history)
 
     result = chat(
         messages=history,
@@ -415,7 +428,7 @@ def stream_respond(
     """Yield (text_delta, None) until done, then ('', cost_usd)."""
     system = _system_for(mode, scenario, delegate_name)
     tier = _tier_for(mode)
-    history = _augment_mentor_history(mode, history)
+    history = _augment_history_with_archive(mode, history)
 
     final = None
     for delta, result in stream_chat(
