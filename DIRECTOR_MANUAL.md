@@ -4,7 +4,7 @@ This is the document the next Director needs to run, maintain, and extend QMUN H
 
 ## What this is
 
-A Streamlit web app the team uses for archive search, country brief generation, training, and AI chat (mentor / crisis backroom / chair assistant). Backed by Anthropic Claude (Haiku 4.5 + Sonnet 4.6), Voyage embeddings, SQLite for the archive index, and Google Drive as the source of truth for documents.
+A Streamlit web app the team uses for archive search, country brief generation, training, and AI chat (mentor / crisis backroom / chair assistant). Backed by Anthropic Claude (Haiku 4.5 + Sonnet 4.6), Voyage embeddings, and Supabase (Postgres) for the archive index in production (SQLite locally). Source documents were seeded into the archive once from Google Drive; the app does NOT read Drive at runtime (see the continuity map below).
 
 For setup details, see `SETUP.md`. For architecture, see `~/.claude/plans/valiant-wibbling-dove.md` (kept locally by the original author).
 
@@ -90,17 +90,38 @@ Edit `lib/chat.py`. Each mode is a system prompt + a small wiring function. Wire
 
 | Surface | Status | Lives in |
 |---|---|---|
-| Google Drive integration | PENDING | `lib/drive.py` — implementation exists, awaits service-account JSON |
+| Google Drive auto-sync | PENDING (manual seed works) | Content is seeded into Supabase via a one-time connector sweep, not live-synced. `lib/drive.py` exists; ongoing auto-sync still awaits a service account. To re-sync, re-run the seed (see continuity map). |
 | Slack OAuth real auth | PENDING | `lib/auth.py` — implementation exists, awaits Slack app registration |
-| Production hosting | PENDING | `runtime.txt` + `Procfile` ready; awaits team GitHub repo + Streamlit Cloud account |
+| Production hosting | LIVE | Deployed on Streamlit Community Cloud, auto-builds from GitHub `main`. |
 
-See `SETUP.md` Tier 2 for how to flip each on.
+See `SETUP.md` Tier 2 for how to flip the remaining items on.
+
+## Where everything lives (continuity map, as of June 2026)
+
+The goal: nothing critical lives only on one person's laptop. Each piece has a cloud home.
+
+| Asset | Home | Notes |
+|---|---|---|
+| **Code** | GitHub `github.com/jtguillemette/qmun-hub` | Auto-deploys to Streamlit Cloud on push to `main`. Currently under the original Director's PERSONAL account. Transfer to a team org is PENDING (see handoff). |
+| **Live app** | `queensmun.streamlit.app` | The deployed pilot. Rebuilds from `main`. |
+| **Live archive data** | Supabase (Postgres) | 125 docs / 1812 chunks at last seed. This is production's source of truth at runtime, independent of any laptop or Drive. Connection + service key in `secrets.toml` under `[supabase]`. |
+| **Source documents (backup)** | Team Drive: "MUN Hub — Live Archive Source" | The curated files that were ingested (background guides, training, sample papers). A copy also sits locally at `data/drive_seed/{bg,guides,samples}/`. |
+| **Director-only documents** | Team Drive: "MUN Hub — Director Only" | Transition/handoff manuals. Director-eyes-only by rule; kept OUT of the team-facing archive. Local copy at `data/drive_seed/_director_only/`. |
+| **API keys** | `secrets.toml` (local) + Streamlit Cloud Secrets dashboard | Anthropic, Voyage, Supabase. NEVER committed to git, NEVER put on Drive. The `secrets.toml.example` in the repo documents the shape without values. |
+| **Budget workbook** | Native Google Sheet (team Drive) | The Director edits it directly. `budget/build_budget.py` is a retired generator; do not rebuild over manual edits. |
+
+### Re-seeding the archive from Drive (one-time sweep, not automatic)
+
+Content was loaded into Supabase by pointing the Google Drive MCP connector at the delegation account and running the seed, NOT by a service account. To refresh later:
+1. The connector reads one account at a time from `~/.config/google-drive-mcp/tokens.json` (loaded once at startup, so a swap needs a restart). Saved tokens: `tokens.personal.json` and `tokens.delegation.json`. To act as the team account: `cp tokens.delegation.json tokens.json` then restart, and swap back to personal when done.
+2. Refresh the local buckets under `data/drive_seed/`, then run `python data/drive_seed/_finish.py` (idempotent; ingests only doc_ids missing from the archive, paced for the free Voyage rate limit). Never run two ingest processes at once on the free Voyage tier; they collectively exceed 3 RPM and silently drop docs.
 
 ## Handoff to next Director
 
 When you graduate or step down:
 1. Run a 1-hour walkthrough with the incoming Director, screen-shared.
-2. Transfer the GitHub repo ownership to the team org account.
-3. Rotate all API keys; new Director re-issues with team accounts and updates `secrets.toml`.
-4. Update this manual with anything you learned that isn't here. Especially document anything that wasn't obvious to you on day one.
-5. Keep a private copy of the architecture plan if the original is gone.
+2. **Transfer the GitHub repo to a team org.** The repo is under the original Director's personal account. Create (or use) a team GitHub org, then in repo Settings transfer ownership. IMPORTANT: the Streamlit Cloud app is connected to the current repo path, so after the transfer you must reconnect the deployment to the new owner/repo (and re-confirm its secrets). GitHub auto-redirects git remotes, but the Streamlit integration does not follow automatically.
+3. **Rotate all API keys** (Anthropic, Voyage, Supabase). The new Director re-issues them on team-owned accounts and updates both `secrets.toml` locally and the Streamlit Cloud Secrets dashboard. Keys are the one asset that cannot live on Drive, so this step is how they actually transfer.
+4. Confirm the new Director has access to the Supabase project and the two team Drive folders above.
+5. Update this manual with anything you learned that isn't here. Especially document anything that wasn't obvious to you on day one.
+6. Keep a private copy of the architecture plan if the original is gone.
