@@ -102,8 +102,8 @@ The goal: nothing critical lives only on one person's laptop. Each piece has a c
 
 | Asset | Home | Notes |
 |---|---|---|
-| **Code** | GitHub `github.com/jtguillemette/qmun-hub` | Auto-deploys to Streamlit Cloud on push to `main`. Currently under the original Director's PERSONAL account. Transfer to a team org is PENDING (see handoff). |
-| **Live app** | `queensmun.streamlit.app` | The deployed pilot. Rebuilds from `main`. |
+| **Code** | GitHub `github.com/queensu-mun/qmun-hub` (org-owned) | Auto-deploys to Streamlit Cloud on push to `main`. The `queensu-mun` org is owned by the **delegation@qiaa.org GitHub account** (permanent team identity), with the current Director added as a co-owner. This is the durable home; it survives Director turnover. |
+| **Live app** | `queensumun.streamlit.app` | The deployed pilot, viewer-restricted (private). Rebuilds from `main`. NOTE: the Streamlit deployment is currently connected via the Director's PERSONAL Streamlit/GitHub login, so the deployment (not the code) is still tied to one person. See handoff. |
 | **Live archive data** | Supabase (Postgres) | 125 docs / 1812 chunks at last seed. This is production's source of truth at runtime, independent of any laptop or Drive. Connection + service key in `secrets.toml` under `[supabase]`. |
 | **Source documents (backup)** | Team Drive: "MUN Hub: Live Archive Source" | The curated files that were ingested (background guides, training, sample papers). A copy also sits locally at `data/drive_seed/{bg,guides,samples}/`. |
 | **Director-only documents** | Team Drive: "MUN Hub: Director Only" | Transition/handoff manuals. Director-eyes-only by rule; kept OUT of the team-facing archive. Local copy at `data/drive_seed/_director_only/`. |
@@ -120,8 +120,9 @@ Content was loaded into Supabase by pointing the Google Drive MCP connector at t
 
 When you graduate or step down:
 1. Run a 1-hour walkthrough with the incoming Director, screen-shared.
-2. **Transfer the GitHub repo to a team org.** The repo is under the original Director's personal account. Create (or use) a team GitHub org, then in repo Settings transfer ownership. IMPORTANT: the Streamlit Cloud app is connected to the current repo path, so after the transfer you must reconnect the deployment to the new owner/repo (and re-confirm its secrets). GitHub auto-redirects git remotes, but the Streamlit integration does not follow automatically.
-3. **Rotate all API keys** (Anthropic, Voyage, Supabase). The new Director re-issues them on team-owned accounts and updates both `secrets.toml` locally and the Streamlit Cloud Secrets dashboard. Keys are the one asset that cannot live on Drive, so this step is how they actually transfer.
-4. Confirm the new Director has access to the Supabase project and the two team Drive folders above.
-5. Update this manual with anything you learned that isn't here. Especially document anything that wasn't obvious to you on day one.
-6. Keep a private copy of the architecture plan if the original is gone.
+2. **Hand over the team GitHub identity.** The repo already lives in the `queensu-mun` org (done June 2026), owned by the delegation@qiaa.org GitHub account. At handoff: (a) give the incoming Director the delegation@qiaa.org GitHub login + 2FA recovery codes (stored with the other delegation credentials), (b) add the incoming Director's GitHub account as an **org Owner**, and (c) remove the outgoing Director as owner once the new one is confirmed.
+3. **Re-home the Streamlit deployment.** The live app is connected via the outgoing Director's personal Streamlit (GitHub) login, so the deployment is the one piece still tied to a person. Either add the incoming Director as an app admin in the Streamlit workspace, or have them delete + redeploy the app from `queensu-mun/qmun-hub` under their own login (re-pasting secrets, reclaiming the `queensumun` subdomain). Same delete-and-redeploy procedure used in the June 2026 org transfer.
+4. **Rotate all API keys** (Anthropic, Voyage, Supabase). The new Director re-issues them on team-owned accounts and updates both `secrets.toml` locally and the Streamlit Cloud Secrets dashboard. Keys are the one asset that cannot live on Drive, so this step is how they actually transfer.
+5. Confirm the new Director has access to the Supabase project and the two team Drive folders above.
+6. Update this manual with anything you learned that isn't here. Especially document anything that wasn't obvious to you on day one.
+7. Keep a private copy of the architecture plan if the original is gone.
